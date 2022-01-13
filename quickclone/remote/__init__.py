@@ -165,12 +165,11 @@ class UrlAuthority(object):
         pass
 
     @classmethod
-    def process_url_parse_result(cls, url_parse_result: ParseResult) -> UrlAuthority:
+    def process_authority(cls, authority: str) -> UrlAuthority:
         """
-        Convert a parsed URL (parsed using `urllib.parse.urlparse`) into a
-        UrlAuthority.
-        This method grabs the `urllib.parse.ParseResult.netloc` attribute from
-        the parsed URL as the source.
+        Convert an authority (as a string) into a `UrlAuthority` object.
+        `authority` can be taking from the `urllib.parse.ParseResult.netloc`
+        attribute from the parsed URL as the source.
         Although `urllib.parse.ParseResult` has its own `hostname`, `username`
         and `password` methods, it cannot handle invalid numbers of ':' and
         '&' and treats every netloc as valid.
@@ -180,16 +179,15 @@ class UrlAuthority(object):
         cls: typing.Type[UrlAuthority]
             The UrlAuthority class.
 
-        url_parse_result: urllib.parse.ParseResult
-            The parsed URL created by `urllib.parse.urlparse`.
+        authority: str
+            The authority section in the URL. This can be obtained from the
+            `netloc` attribute from a `urllib.parse.ParseResult` object which
+            is the return value from `urllib.parse.urlparse`.
 
         Returns
         -------
         UrlAuthority
         """
-
-        processed_url = process_url_for_tentative_authority(url_parse_result)
-        authority = processed_url.netloc
 
         colon_index = authority.find(":")
         colon_rindex = authority.rfind(":")
