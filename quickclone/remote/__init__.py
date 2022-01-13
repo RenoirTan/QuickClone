@@ -69,14 +69,24 @@ class UrlAuthority(object):
     def process_url_parse_result(cls, url_parse_result: ParseResult) -> UrlAuthority:
         processed_url = process_url_for_tentative_authority(url_parse_result)
         authority = processed_url.netloc
+
         colon_index = authority.find(":")
+        colon_rindex = authority.rfind(":")
+        if colon_index != colon_rindex:
+            raise ValueError("Multiple ':' found in {authority}")
+
         at_index = authority.find("@")
+        at_rindex = authority.rfind("@")
+        if at_index != at_rindex:
+            raise ValueError("Multiple '@' found in {authority}")
+
         if colon_index != -1 and at_index == -1:
             username = authority[:colon_index]
             hostname = authority[colon_index+1:]
             raise ValueError(
                 f"Invalid syntax: {username}:{hostname}. Suggestion: {username}@{hostname}"
             )
+
         if at_index == -1:
             hostname = authority
             username, password = None, None
