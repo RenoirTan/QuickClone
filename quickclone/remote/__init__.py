@@ -16,21 +16,21 @@ class LocatorBuilder(object):
     self: LocatorBuilder
         The LocatorBuilder object to be initialised.
 
-    scheme: t.Optional[str] = None
+    scheme: str = ""
         The scheme used to access the remote repository.
         Comes before everything else in a URL and is suffixed by '://'.
         Examples: https, ssh
 
-    host: t.Optional[str] = None
+    host: str = ""
         The host where the remote repository is located.
         Examples: github.com, 1.1.1.1
 
-    username: t.Optional[str] = None
+    username: str = ""
         The username used to access the remote repository.
         Comes before the host and is separated from the latter by '@'.
         Examples: git (in git@github.com)
 
-    password: t.Optional[str] = None
+    password: str = ""
         Password of the user used to authenticate themselves.
         If present, must come after a username (separated by ':') and before
         a host name (separated by '@').
@@ -38,21 +38,21 @@ class LocatorBuilder(object):
         security vulnerability.
         However, this is still used by github when you use HTTPS.
 
-    path: t.Optional[str] = None
+    path: str = ""
         The path to the remote repository
         (not referring to where the local clone is located).
         Comes after the host and separated from it by '/'.
         Examples: RenoirTan/QuickClone
         (in https://github.com/RenoirTan/QuickClone)
 
-    query: t.Optional[str] = None
+    query: str = ""
         The parameters in the URL.
         Comes after the path or host and the start of the query section is
         denoted by '?'.
         You can chain multiple key-value pairs using '&' as the separator.
         Examples: key=value (in https://example.com?key=value)
 
-    fragment: t.Optional[str] = None
+    fragment: str = ""
         The fragment identifying a secondary resource.
         The last part of the URL. The fragment section is denoted by '#'.
         Examples: History
@@ -71,13 +71,13 @@ class LocatorBuilder(object):
 
     def __init__(
         self,
-        scheme: t.Optional[str] = None,
-        host: t.Optional[str] = None,
-        username: t.Optional[str] = None,
-        password: t.Optional[str] = None,
-        path: t.Optional[str] = None,
-        query: t.Optional[str] = None,
-        fragment: t.Optional[str] = None
+        scheme: str = "",
+        host: str = "",
+        username: str = "",
+        password: str = "",
+        path: str = "",
+        query: str = "",
+        fragment: str = ""
     ) -> None:
         self.scheme = scheme
         self.host = host
@@ -95,23 +95,23 @@ class LocatorBuilder(object):
         """Get the host name of the website hosting the remote repository."""
         return self.DEFAULT_HOST if self.host is None else self.host
 
-    def get_username(self) -> t.Optional[str]:
+    def get_username(self) -> str:
         """Get the username used to access the remote repository."""
         return self.username
 
-    def get_password(self) -> t.Optional[str]:
+    def get_password(self) -> str:
         """Get the password used to access the remote repository."""
         return self.password
 
-    def get_path(self) -> t.Optional[str]:
+    def get_path(self) -> str:
         """Get the path of the remote repository (in the website)."""
         return self.path
 
-    def get_query(self) -> t.Optional[str]:
+    def get_query(self) -> str:
         """Get the parameters (as a single string)."""
         return self.query
 
-    def get_fragment(self) -> t.Optional[str]:
+    def get_fragment(self) -> str:
         """Get the fragment."""
         return self.fragment
 
@@ -149,18 +149,18 @@ class UrlAuthority(object):
     host: str
         The host name of the URL.
 
-    username: t.Optional[str] = None
+    username: str = ""
         The username in the URL.
 
-    password: t.Optional[str] = None
+    password: str = ""
         The password in the URL.
     """
 
     def __init__(
         self,
         host: str,
-        username: t.Optional[str] = None,
-        password: t.Optional[str] = None
+        username: str = "",
+        password: str = ""
     ) -> None:
         self.host = host
         self.username = username
@@ -210,12 +210,12 @@ class UrlAuthority(object):
 
         if at_index == -1:
             hostname = authority
-            username, password = None, None
+            username, password = "", ""
         else:
             hostname = authority[at_index+1]
             if colon_index == -1:
                 username = authority[:at_index]
-                password = None
+                password = ""
             else:
                 username = authority[:colon_index]
                 password = authority[colon_index+1:at_index]
