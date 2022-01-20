@@ -162,7 +162,9 @@ class UrlAuthority(object):
         username: t.Optional[str] = None,
         password: t.Optional[str] = None
     ) -> None:
-        pass
+        self.host = host
+        self.username = username
+        self.password = password
 
     @classmethod
     def process_authority(cls, authority: str) -> UrlAuthority:
