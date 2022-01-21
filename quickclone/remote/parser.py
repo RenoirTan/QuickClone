@@ -30,6 +30,12 @@ def extract_groups(matches: re.Match, names: t.Iterable[str]) -> t.Dict[str, t.O
     return result
 
 
+UNRESERVED: str = r"[0-9a-zA-Z._~\-]"
+PERCENT_ENCODED: str = r"%[0-9a-fA-F]{2}"
+SUB_DELIMS: str = r"[!\$&'\(\)\*\+\,\;\=]"
+CHAR: str = f"{UNRESERVED}|{PERCENT_ENCODED}|{SUB_DELIMS}"
+
+
 # Taken from validators.domain.pattern
 DOMAIN_REGEX_RAW: str = (
     r"(?P<domain>"
@@ -73,9 +79,8 @@ IPV6_REGEX_RAW: str = (
 HOST_REGEX_RAW: str = f"(?P<host>{DOMAIN_REGEX_RAW}|{IPV4_REGEX_RAW}|{IPV6_REGEX_RAW})"
 
 
-#                                         Normal ASCII    |Percent-encoding|Sub-delims
-USERNAME_REGEX_RAW: str = r"(?P<username>([0-9a-zA-Z._~\-]|%[0-9a-fA-F]{2}|[!\$&'\(\)\*\+\,\;\=])+)"
-PASSWORD_REGEX_RAW: str = r"(?P<password>([0-9a-zA-Z:._~\-]|%[0-9a-fA-F]{2})+)"
+USERNAME_REGEX_RAW: str = f"(?P<username>({CHAR})+)"
+PASSWORD_REGEX_RAW: str = f"(?P<password>({CHAR}|[:])+)"
 
 
 USERINFO_REGEX_RAW: str = f"{USERNAME_REGEX_RAW}(:{PASSWORD_REGEX_RAW})?"
@@ -95,6 +100,17 @@ AUTHORITY_REGEX_RAW: str = (
     r")"
 )
 AUTHORITY_REGEX: re.Pattern[str] = re.compile(f"^{AUTHORITY_REGEX_RAW}$")
+
+
+SCHEME_REGEX_RAW: str = r"(?P<scheme>[a-zA-Z][a-zA-Z0-9+.-]*)"
+PATH_REGEX_RAW: str = (
+    r"(?P<path>"
+    f"(({CHAR}|[@])+(/({CHAR}|[@])+)*)/?|/?"
+    r")"
+)
+QUERY_REGEX_RAW: str = f"(?P<query>({CHAR}|[/\?])*)"
+FRAGMENT_REGEX_RAW: str = f"(?P<fragment>({CHAR}|[/\?])*)"
+
 
 def parse_authority(authority: str) -> t.Dict[str, t.Optional[str]]:
     """
