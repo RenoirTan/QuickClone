@@ -91,10 +91,10 @@ PORT_REGEX_RAW: str = (
 
 AUTHORITY_REGEX_RAW: str = (
     r"(?P<authority>"
-    f"^({USERINFO_REGEX_RAW}@)?({HOST_REGEX_RAW})(:{PORT_REGEX_RAW})?$"
+    f"({USERINFO_REGEX_RAW}@)?({HOST_REGEX_RAW})(:{PORT_REGEX_RAW})?"
     r")"
 )
-AUTHORITY_REGEX: re.Pattern[str] = re.compile(AUTHORITY_REGEX_RAW)
+AUTHORITY_REGEX: re.Pattern[str] = re.compile(f"^{AUTHORITY_REGEX_RAW}$")
 
 def parse_authority(authority: str) -> t.Dict[str, t.Optional[str]]:
     """
