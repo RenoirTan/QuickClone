@@ -5,6 +5,8 @@ from urllib.parse import urlparse, urlunparse, ParseResult
 
 import validators
 
+from . import parser
+
 
 class LocatorBuilder(object):
     """

@@ -2,6 +2,7 @@ import argparse
 import typing as t
 import sys
 
+import quickclone
 from quickclone import DESCRIPTION, NAME, VERSION
 
 
@@ -23,11 +24,33 @@ def main(argv: t.List[str]) -> int:
         type=str,
         help="the url of the remote to be cloned"
     )
+    app.add_argument(
+        "--test",
+        "-T",
+        dest="tests",
+        metavar="TEST",
+        action="append",
+        required=False,
+        default=[],
+        help="which tests to conduct"
+    )
     args = app.parse_args()
     if args.show_version:
         print(f"{NAME} v{VERSION}")
         return 0
+    print(args.remote_url)
+    print(args.tests)
+    conduct_tests(args.tests, args.remote_url)
     return 0
+
+
+def conduct_tests(tests: t.List[str], remote_url: str) -> int:
+    success_counts: int = 0
+    for test in tests:
+        if test == "parse_authority":
+            print(quickclone.remote.parser.parse_authority(remote_url))
+            success_counts += 1
+    return success_counts
 
 
 sys.exit(main(sys.argv))

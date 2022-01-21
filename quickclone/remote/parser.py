@@ -5,20 +5,24 @@ import typing as t
 
 # Taken from validators.domain.pattern
 DOMAIN_REGEX_RAW: str = (
+    r"(?P<domain>"
     r"(?:[a-zA-Z0-9]"  # First character of the domain
-    r"(?:[a-zA-Z0-9-_]{0,61}[A-Za-z0-9])?\.)"  # Sub domain + hostname
-    r"+[A-Za-z0-9][A-Za-z0-9-_]{0,61}"  # First 61 characters of the gTLD
+    r"(?:[a-zA-Z0-9-_]{0,61}[A-Za-z0-9])?\.)+"  # Sub domain + hostname
+    r"[A-Za-z0-9][A-Za-z0-9-_]{0,61}"  # First 61 characters of the gTLD
     r"[A-Za-z]"  # Last character of the gTLD
+    r")"
 )
 
 # Taken from https://ihateregex.io/expr/ip/
 IPV4_REGEX_RAW: str = (
-    r"(25[0-5]|\b2[0-4][0-9]|\b[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}"
+    r"(?P<ipv4>"
+    r"(25[0-5]|\b2[0-4][0-9]|\b[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|1?[0-9][0-9]?)){3}"
+    r")"
 )
 
 # Taken from https://stackoverflow.com/a/17871737
 IPV6_REGEX_RAW: str = (
-    r"("
+    r"(?P<ipv6>"
     r"([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|"          # 1:2:3:4:5:6:7:8
     r"([0-9a-fA-F]{1,4}:){1,7}:|"                         # 1::                              1:2:3:4:5:6:7::
     r"([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|"         # 1::8             1:2:3:4:5:6::8  1:2:3:4:5:6::8
@@ -43,15 +47,28 @@ HOST_REGEX_RAW: str = f"({DOMAIN_REGEX_RAW}|{IPV4_REGEX_RAW}|{IPV6_REGEX_RAW})"
 
 
 #                           Normal ASCII|Percent-encoding|Sub-delims
-USERNAME_REGEX_RAW: str = r"([0-9a-zA-Z]|%[0-9a-fA-F]{2}|[!\$&'\(\)\*\+\,\;\=])+"
-PASSWORD_REGEX_RAW: str = r"([0-9a-zA-Z:]|%[0-9a-fA-F]{2})+"
+USERNAME_REGEX_RAW: str = r"(?P<username>([0-9a-zA-Z]|%[0-9a-fA-F]{2}|[!\$&'\(\)\*\+\,\;\=])+)"
+PASSWORD_REGEX_RAW: str = r"(?P<password>([0-9a-zA-Z:]|%[0-9a-fA-F]{2})+)"
 
 
 USERINFO_REGEX_RAW: str = f"{USERNAME_REGEX_RAW}(:{PASSWORD_REGEX_RAW})?"
 
 
-AUTHORITY_REGEX_RAW: str = f"({USERINFO_REGEX_RAW}@)?({HOST_REGEX_RAW})"
+# 0 to 65535
+PORT_REGEX_RAW: str = (
+    r"(?P<port>"
+    r"(6553[0-5]|655[0-2]\d|65[0-4]\d\d|6[0-4]\d\d\d|[1-5]?\d\d\d\d|[1-9]\d{0,3}|[0-9])"
+    r")"
+)
 
+
+AUTHORITY_REGEX_RAW: str = (
+    r"(?P<authority>"
+    f"^({USERINFO_REGEX_RAW}@)?({HOST_REGEX_RAW})(:{PORT_REGEX_RAW})?$"
+    r")"
+)
+AUTHORITY_REGEX: re.Pattern[str] = re.compile(AUTHORITY_REGEX_RAW)
 
 def parse_authority(authority: str) -> t.Dict[str, str]:
-    pass
+    matches = AUTHORITY_REGEX.search(authority)
+    return matches
