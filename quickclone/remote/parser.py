@@ -3,6 +3,33 @@ import re
 import typing as t
 
 
+def extract_groups(matches: re.Match, names: t.Iterable[str]) -> t.Dict[str, t.Optional[str]]:
+    """
+    Extract named groups from a `re.Match` object to a dictionary.
+    These named groups are delimited by `(?P<name>)`.
+    
+    Parameters
+    ----------
+    matches: re.Match
+        The matches created by `re.search`.
+    
+    names: Iterable[str]
+        A list of named groups found in the regex string.
+    
+    Returns
+    -------
+    Dict[str, Optional[str]]
+        A dictionary of named groups and their associated values.
+    """
+    result = {}
+    for name in names:
+        try:
+            result[name] = matches.group(name)
+        except IndexError:
+            result[name] = None
+    return result
+
+
 # Taken from validators.domain.pattern
 DOMAIN_REGEX_RAW: str = (
     r"(?P<domain>"
@@ -16,7 +43,7 @@ DOMAIN_REGEX_RAW: str = (
 # Taken from https://ihateregex.io/expr/ip/
 IPV4_REGEX_RAW: str = (
     r"(?P<ipv4>"
-    r"(25[0-5]|\b2[0-4][0-9]|\b[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|1?[0-9][0-9]?)){3}"
+    r"(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}"
     r")"
 )
 
@@ -43,12 +70,12 @@ IPV6_REGEX_RAW: str = (
 )
 
 
-HOST_REGEX_RAW: str = f"({DOMAIN_REGEX_RAW}|{IPV4_REGEX_RAW}|{IPV6_REGEX_RAW})"
+HOST_REGEX_RAW: str = f"(?P<host>{DOMAIN_REGEX_RAW}|{IPV4_REGEX_RAW}|{IPV6_REGEX_RAW})"
 
 
-#                           Normal ASCII|Percent-encoding|Sub-delims
-USERNAME_REGEX_RAW: str = r"(?P<username>([0-9a-zA-Z]|%[0-9a-fA-F]{2}|[!\$&'\(\)\*\+\,\;\=])+)"
-PASSWORD_REGEX_RAW: str = r"(?P<password>([0-9a-zA-Z:]|%[0-9a-fA-F]{2})+)"
+#                                         Normal ASCII    |Percent-encoding|Sub-delims
+USERNAME_REGEX_RAW: str = r"(?P<username>([0-9a-zA-Z._~\-]|%[0-9a-fA-F]{2}|[!\$&'\(\)\*\+\,\;\=])+)"
+PASSWORD_REGEX_RAW: str = r"(?P<password>([0-9a-zA-Z:._~\-]|%[0-9a-fA-F]{2})+)"
 
 
 USERINFO_REGEX_RAW: str = f"{USERNAME_REGEX_RAW}(:{PASSWORD_REGEX_RAW})?"
@@ -69,6 +96,24 @@ AUTHORITY_REGEX_RAW: str = (
 )
 AUTHORITY_REGEX: re.Pattern[str] = re.compile(AUTHORITY_REGEX_RAW)
 
-def parse_authority(authority: str) -> t.Dict[str, str]:
+def parse_authority(authority: str) -> t.Dict[str, t.Optional[str]]:
+    """
+    Parse the authority segment in a URL and split it into its consituent parts.
+    
+    Parameters
+    ----------
+    authority: str
+        The authority segment in a URL.
+    
+    Returns
+    -------
+    Dict[str, Optional[str]]
+        The parts of the authority segment.
+    """
     matches = AUTHORITY_REGEX.search(authority)
-    return matches
+    if matches is None:
+        return {}
+    return extract_groups(
+        matches,
+        ["authority", "domain", "ipv4", "ipv6", "username", "password", "port"]
+    )
