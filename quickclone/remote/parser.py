@@ -112,6 +112,14 @@ QUERY_REGEX_RAW: str = f"(?P<query>({CHAR}|[/\?])*)"
 FRAGMENT_REGEX_RAW: str = f"(?P<fragment>({CHAR}|[/\?])*)"
 
 
+FULL_URL_REGEX_RAW: str = (
+    r"(?P<full_url>"
+    f"{SCHEME_REGEX_RAW}://{AUTHORITY_REGEX_RAW}(/{PATH_REGEX_RAW})?(\?{QUERY_REGEX_RAW})?(#{FRAGMENT_REGEX_RAW})?"
+    r")"
+)
+FULL_URL_REGEX: re.Pattern[str] = re.compile(f"^{FULL_URL_REGEX_RAW}$")
+
+
 def parse_authority(authority: str) -> t.Dict[str, t.Optional[str]]:
     """
     Parse the authority segment in a URL and split it into its consituent parts.
@@ -132,4 +140,40 @@ def parse_authority(authority: str) -> t.Dict[str, t.Optional[str]]:
     return extract_groups(
         matches,
         ["authority", "domain", "ipv4", "ipv6", "username", "password", "port"]
+    )
+
+
+def parse_full_url(url: str) -> t.Dict[str, t.Optional[str]]:
+    """
+    Parse a full URL and split it into its constituent parts.
+    
+    Parameters
+    ----------
+    url: str
+        The full URL.
+    
+    Returns
+    -------
+    Dict[str, Optional[str]]
+        The parts of the URL.
+    """
+    matches = FULL_URL_REGEX.search(url)
+    if matches is None:
+        return {}
+    return extract_groups(
+        matches,
+        [
+            "full_url",
+            "scheme",
+            "authority",
+            "domain",
+            "ipv4",
+            "ipv6",
+            "username",
+            "password",
+            "port",
+            "path",
+            "query",
+            "fragment"
+        ]
     )

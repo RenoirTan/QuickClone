@@ -50,6 +50,9 @@ def conduct_tests(tests: t.List[str], remote_url: str) -> int:
         if test == "parse_authority":
             print(quickclone.remote.parser.parse_authority(remote_url))
             success_counts += 1
+        elif test == "parse_full_url":
+            print(quickclone.remote.parser.parse_full_url(remote_url))
+            success_counts += 1
     return success_counts
 
 
