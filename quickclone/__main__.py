@@ -32,7 +32,7 @@ def main(argv: t.List[str]) -> int:
         action="append",
         required=False,
         default=[],
-        help="which tests to conduct"
+        help="which tests to conduct: parse_authority, parse_full_url"
     )
     args = app.parse_args()
     if args.show_version:
