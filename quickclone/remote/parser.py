@@ -13,7 +13,7 @@ DOMAIN_REGEX_RAW: str = (
 
 # Taken from https://ihateregex.io/expr/ip/
 IPV4_REGEX_RAW: str = (
-    r"(\b25[0-5]|\b2[0-4][0-9]|\b[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}"
+    r"(25[0-5]|\b2[0-4][0-9]|\b[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}"
 )
 
 # Taken from https://stackoverflow.com/a/17871737
