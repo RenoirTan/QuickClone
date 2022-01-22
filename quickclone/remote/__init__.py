@@ -254,7 +254,7 @@ class BaseLocator(object):
         return self.fragment
 
 
-class UniformResourceLocator(object):
+class UniformResourceLocator(BaseLocator):
     """
     A full uniform resource locator (hopefully RFC 3986 compliant).
     
@@ -357,7 +357,7 @@ class UniformResourceLocator(object):
         return url
 
 
-class DirtyLocator(object):
+class DirtyLocator(BaseLocator):
     """
     A locator object representing a user-inputted URL (with parts possibly
     missing).
@@ -441,7 +441,7 @@ class DirtyLocator(object):
         return cls(**fields)
 
 
-class LocatorBuilder(object):
+class LocatorBuilder(BaseLocator):
     """
     A builder which stores user/program specified defaults to generate valid
     URLs from user inputs.
