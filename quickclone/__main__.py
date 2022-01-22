@@ -4,6 +4,7 @@ import sys
 
 import quickclone
 from quickclone import DESCRIPTION, NAME, VERSION
+from quickclone.remote import DirtyLocator, LocatorBuilder, UniformResourceLocator
 
 
 def main(argv: t.List[str]) -> int:
@@ -38,8 +39,10 @@ def main(argv: t.List[str]) -> int:
     if args.show_version:
         print(f"{NAME} v{VERSION}")
         return 0
-    print(args.remote_url)
-    print(args.tests)
+    dirty = DirtyLocator.process_dirty_url(args.remote_url)
+    builder = LocatorBuilder()
+    final_url = UniformResourceLocator.from_user_and_defaults(dirty, builder)
+    print(f"Final URL: {str(final_url)}")
     conduct_tests(args.tests, args.remote_url)
     return 0
 

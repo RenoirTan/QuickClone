@@ -211,7 +211,7 @@ def parse_authority(authority: str, **kwargs: t.Any) -> t.Dict[str, t.Optional[s
         return {}
     return extract_groups(
         matches,
-        ["authority", "domain", "ipv4", "ipv6", "username", "password", "port"],
+        ["authority", "host", "domain", "ipv4", "ipv6", "username", "password", "port"],
         **kwargs
     )
 
@@ -242,6 +242,7 @@ def parse_full_url(url: str, **kwargs: t.Any) -> t.Dict[str, t.Optional[str]]:
             "full_url",
             "scheme",
             "authority",
+            "host",
             "domain",
             "ipv4",
             "ipv6",
@@ -283,6 +284,7 @@ def parse_dirty_url(url: str, **kwargs: t.Any) -> t.Dict[str, t.Optional[str]]:
             "dirty_url",
             "scheme",
             "authority",
+            "host",
             "domain",
             "ipv4",
             "ipv6",

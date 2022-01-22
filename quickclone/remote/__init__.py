@@ -190,34 +190,39 @@ class BaseLocator(object):
         self.fragment = fragment
     
     def __str__(self) -> str:
-        scheme_part = f"{self.scheme}://" if self.scheme != "" else ""
-        authority_part = str(UrlAuthority(self.host, self.username, self.password, self.port))
-        path_part = f"/{self.path}" if self.path != "" else ""
-        query_part = f"?{self.query}" if self.query != "" else ""
-        fragment_part = f"#{self.fragment}" if self.fragment != "" else ""
+        scheme_part = f"{self.get_scheme()}://" if self.get_scheme() != "" else ""
+        authority_part = str(UrlAuthority(
+            self.get_host(),
+            self.get_username(),
+            self.get_password(),
+            self.get_port()
+        ))
+        path_part = f"/{self.get_path()}" if self.get_path() != "" else ""
+        query_part = f"?{self.get_query()}" if self.get_query() != "" else ""
+        fragment_part = f"#{self.get_fragment()}" if self.get_fragment() != "" else ""
         return scheme_part + authority_part + path_part + query_part + fragment_part
         
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(\
-            scheme={repr(self.scheme)}, \
-            host={repr(self.host)}, \
-            username={repr(self.username)}, \
-            password={repr(self.password)}, \
-            port={repr(self.port)}, \
-            path={repr(self.path)}, \
-            query={repr(self.query)}, \
-            fragment={repr(self.fragment)}\
-            )"
+scheme={repr(self.scheme)}, \
+host={repr(self.host)}, \
+username={repr(self.username)}, \
+password={repr(self.password)}, \
+port={repr(self.port)}, \
+path={repr(self.path)}, \
+query={repr(self.query)}, \
+fragment={repr(self.fragment)}\
+)"
     
     def __iter__(self) -> t.Generator[t.Tuple[str, str], None, None]:
-        yield "scheme", self.scheme
-        yield "host", self.host
-        yield "username", self.username
-        yield "password", self.password
-        yield "port", self.port
-        yield "path", self.path
-        yield "query", self.query
-        yield "fragment", self.fragment
+        yield "scheme", self.get_scheme()
+        yield "host", self.get_host()
+        yield "username", self.get_username()
+        yield "password", self.get_password()
+        yield "port", self.get_port()
+        yield "path", self.get_path()
+        yield "query", self.get_query()
+        yield "fragment", self.get_fragment()
     
     def get_scheme(self) -> str:
         """Get the scheme used to access the remote repository."""
@@ -239,7 +244,7 @@ class BaseLocator(object):
         """
         Get the port used to access the server hosting the remote repository.
         """
-        return self.get_port
+        return self.port
 
     def get_path(self) -> str:
         """Get the path of the remote repository (in the website)."""
@@ -314,11 +319,11 @@ class UniformResourceLocator(BaseLocator):
         return super().__str__()
     
     def find_faults(self) -> t.Generator[BaseException, None, None]:
-        if self.username == "" and self.password != "":
+        if self.get_username() == "" and self.get_password() != "":
             yield ValueError("Username not given but password given.")
 
     def validate(self) -> bool:
-        return len(list(self.find_faults)) == 0
+        return len(list(self.find_faults())) == 0
     
     @classmethod
     def from_user_and_defaults(
@@ -350,7 +355,10 @@ class UniformResourceLocator(BaseLocator):
         -------
         UniformResourceLocator
         """
-        parts = {**user_input, **defaults}
+        parts = dict(defaults)
+        for key, value in user_input:
+            if value != "":
+                parts[key] = value
         url = cls(**parts)
         for fault in url.find_faults():
             raise fault
@@ -508,11 +516,11 @@ class LocatorBuilder(BaseLocator):
 
     def get_scheme(self) -> str:
         """Get the scheme used to access the remote repository."""
-        return self.DEFAULT_SCHEME if self.scheme is None else self.scheme
+        return self.DEFAULT_SCHEME if self.scheme == "" else self.scheme
 
     def get_host(self) -> str:
         """Get the host name of the website hosting the remote repository."""
-        return self.DEFAULT_HOST if self.host is None else self.host
+        return self.DEFAULT_HOST if self.host == "" else self.host
 
 
 class UrlAuthority(object):
