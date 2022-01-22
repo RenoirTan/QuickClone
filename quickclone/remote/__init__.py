@@ -209,6 +209,16 @@ class BaseLocator(object):
             fragment={repr(self.fragment)}\
             )"
     
+    def __iter__(self) -> t.Generator[t.Tuple[str, str], None, None]:
+        yield "scheme", self.scheme
+        yield "host", self.host
+        yield "username", self.username
+        yield "password", self.password
+        yield "port", self.port
+        yield "path", self.path
+        yield "query", self.query
+        yield "fragment", self.fragment
+    
     def get_scheme(self) -> str:
         """Get the scheme used to access the remote repository."""
         return self.scheme
@@ -309,6 +319,42 @@ class UniformResourceLocator(object):
 
     def validate(self) -> bool:
         return len(list(self.find_faults)) == 0
+    
+    @classmethod
+    def from_user_and_defaults(
+        cls,
+        user_input: DirtyLocator,
+        defaults: LocatorBuilder
+    ) -> UniformResourceLocator:
+        """
+        Create a final URL from the user input and defaults drawn from user
+        configurations or hard coded into QuickClone.
+        
+        Parameters
+        ----------
+        cls: Type[UniformResourceLocator]
+            The UniformResourceLocator class.
+        
+        user_input: DirtyLocator
+            The user-inputted URL.
+        
+        defaults: LocatorBuilder
+            The defaults from configs.
+        
+        Raises
+        ------
+        ValueError
+            If vital bits are missing.
+        
+        Returns
+        -------
+        UniformResourceLocator
+        """
+        parts = {**user_input, **defaults}
+        url = cls(**parts)
+        for fault in url.find_faults():
+            raise fault
+        return url
 
 
 class DirtyLocator(object):
