@@ -2,9 +2,8 @@ import argparse
 import typing as t
 import sys
 
-import quickclone
 from quickclone import DESCRIPTION, NAME, VERSION
-from quickclone.remote import DirtyLocator, LocatorBuilder, UniformResourceLocator
+from quickclone.remote import DirtyLocator, LocatorBuilder, UniformResourceLocator, UrlAuthority
 
 
 def main(argv: t.List[str]) -> int:
@@ -51,13 +50,16 @@ def conduct_tests(tests: t.List[str], remote_url: str) -> int:
     success_counts: int = 0
     for test in tests:
         if test == "parse_authority":
-            print(quickclone.remote.parser.parse_authority(remote_url))
+            authority = UrlAuthority.process_authority(remote_url)
+            print(authority)
             success_counts += 1
         elif test == "parse_full_url":
-            print(quickclone.remote.parser.parse_full_url(remote_url))
+            url = UniformResourceLocator.process_url(remote_url)
+            print(url)
             success_counts += 1
         elif test == "parse_dirty_url":
-            print(quickclone.remote.parser.parse_dirty_url(remote_url))
+            dirty_url = DirtyLocator.process_dirty_url(remote_url)
+            print(dirty_url)
             success_counts += 1
         else:
             print(f"Unrecognised test: {test}")

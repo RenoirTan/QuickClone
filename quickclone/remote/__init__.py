@@ -1,7 +1,7 @@
 from __future__ import annotations
 import typing as t
 
-from .parser import parse_authority, parse_dirty_url
+from .parser import parse_authority, parse_dirty_url, parse_full_url
 
 
 LOCATOR_FIELDS: str = """
@@ -123,7 +123,8 @@ class BaseLocator(object):
         path: str = "",
         port: str = "",
         query: str = "",
-        fragment: str = ""
+        fragment: str = "",
+        **kwargs # Easy way to ignore excess keys
     ) -> None:
         """
         Initiate an object representing a URL.
@@ -332,6 +333,10 @@ class UniformResourceLocator(BaseLocator):
         """
         if self.get_username() == "" and self.get_password() != "":
             yield ValueError("Username not given but password given.")
+        if self.get_scheme() == "":
+            yield ValueError("No scheme specified.")
+        if self.get_host() == "":
+            yield ValueError("Empty host.")
 
     def validate(self) -> bool:
         """
@@ -344,6 +349,38 @@ class UniformResourceLocator(BaseLocator):
             `True` if this URL has no errors in it and `False` otherwise.
         """
         return sum(map(lambda _: 1, self.find_faults())) == 0
+    
+    @classmethod
+    def process_url(cls, url: str) -> UniformResourceLocator:
+        """
+        Process a URL and turn it into `UniformResourceLocator` object. The
+        URL must have at least a scheme and host.
+        
+        Parameters
+        ----------
+        cls: Type[UniformResourceLocator]
+            The UniformResourceLocator class.
+        
+        url: str
+            The URL to be parsed and decomposed into a UniformResourceLocator.
+        
+        Raises
+        ------
+        ValueError
+            If an error was found in the URL. Only the first error encountered
+            will be raised.
+        
+        Returns
+        -------
+        UniformResourceLocator
+        """
+        parsed = parse_full_url(url, none_str="to_str")
+        if parsed == {}:
+            raise ValueError(f"Invalid URL: {url}")
+        url: UniformResourceLocator = UniformResourceLocator(**parsed)
+        for fault in url.find_faults():
+            raise fault
+        return url
     
     @classmethod
     def from_user_and_defaults(
