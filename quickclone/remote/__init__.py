@@ -189,6 +189,26 @@ class BaseLocator(object):
         self.query = query
         self.fragment = fragment
     
+    def __str__(self) -> str:
+        scheme_part = f"{self.scheme}://" if self.scheme != "" else ""
+        authority_part = str(UrlAuthority(self.host, self.username, self.password, self.port))
+        path_part = f"/{self.path}" if self.path != "" else ""
+        query_part = f"?{self.query}" if self.query != "" else ""
+        fragment_part = f"#{self.fragment}" if self.fragment != "" else ""
+        return scheme_part + authority_part + path_part + query_part + fragment_part
+        
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(\
+            scheme={repr(self.scheme)}, \
+            host={repr(self.host)}, \
+            username={repr(self.username)}, \
+            password={repr(self.password)}, \
+            port={repr(self.port)}, \
+            path={repr(self.path)}, \
+            query={repr(self.query)}, \
+            fragment={repr(self.fragment)}\
+            )"
+    
     def get_scheme(self) -> str:
         """Get the scheme used to access the remote repository."""
         return self.scheme
@@ -414,6 +434,15 @@ class UrlAuthority(object):
         self.username = username
         self.password = password
         self.port = port
+    
+    def __str__(self) -> str:
+        userpass_part = self.username
+        if self.password != "":
+            userpass_part += f":{self.password}"
+        if len(userpass_part) > 0:
+            userpass_part += "@"
+        port_part = f":{self.port}" if self.port != "" else ""
+        return userpass_part + self.host + port_part
 
     @classmethod
     def process_authority(cls, authority: str) -> UrlAuthority:
