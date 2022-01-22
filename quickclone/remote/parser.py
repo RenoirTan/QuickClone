@@ -180,11 +180,8 @@ FULL_URL_REGEX: re.Pattern[str] = re.compile(f"^{FULL_URL_REGEX_RAW}$")
 DIRTY_URL_REGEX_RAW: str = (
     r"(?P<dirty_url>"
     f"({SCHEME_REGEX_RAW}://)?"
-    r"("
-    f"(({AUTHORITY_REGEX_RAW})?)(/(?P<path_with_authority>{PATH_INTERNAL_REGEX_RAW})?)"
-    r"|"
-    f"(/?(?P<path_no_authority>{PATH_INTERNAL_REGEX_RAW})?)"
-    r")"
+    f"({AUTHORITY_REGEX_RAW})?"
+    f"(/?{PATH_REGEX_RAW}?)?"
     f"(\?{QUERY_REGEX_RAW})?"
     f"(#{FRAGMENT_REGEX_RAW})?"
     r")"
@@ -280,8 +277,6 @@ def parse_dirty_url(url: str, **kwargs: t.Any) -> t.Dict[str, t.Optional[str]]:
     matches = DIRTY_URL_REGEX.search(url)
     if matches is None:
         return {}
-    if "combine" not in kwargs:
-        kwargs["combine"] = {"path": ["path_with_authority", "path_no_authority"]}
     return extract_groups(
         matches,
         [
