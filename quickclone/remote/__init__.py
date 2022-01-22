@@ -1,9 +1,6 @@
 from __future__ import annotations
-import re
 import typing as t
 from urllib.parse import urlparse, urlunparse, ParseResult
-
-import validators
 
 from .parser import parse_authority
 
