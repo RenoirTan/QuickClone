@@ -244,6 +244,73 @@ class BaseLocator(object):
         return self.fragment
 
 
+class UniformResourceLocator(object):
+    """
+    A full uniform resource locator (hopefully RFC 3986 compliant).
+    
+    Fields
+    ------
+    scheme: str
+        The scheme used to access the remote repository.
+        Comes before everything else in a URL and is suffixed by '://'.
+        Examples: https, ssh
+
+    host: str
+        The host where the remote repository is located.
+        Examples: github.com, 1.1.1.1
+
+    username: str
+        The username used to access the remote repository.
+        Comes before the host and is separated from the latter by '@'.
+        Examples: git (in git@github.com)
+
+    password: str
+        Password of the user used to authenticate themselves.
+        If present, must come after a username (separated by ':') and before
+        a host name (separated by '@').
+        RFC 3986 recommends that you don't ever use this because it's a huge
+        security vulnerability.
+        However, this is still used by github when you use HTTPS.
+    
+    port: str
+        The port used to connect to the server.
+        If present, must come after the host name and must be an integer
+        between 0 and 65535 (inclusive).
+
+    path: str
+        The path to the remote repository
+        (not referring to where the local clone is located).
+        Comes after the host and separated from it by '/'.
+        Examples: RenoirTan/QuickClone
+        (in https://github.com/RenoirTan/QuickClone)
+
+    query: str
+        The parameters in the URL.
+        Comes after the path or host and the start of the query section is
+        denoted by '?'.
+        You can chain multiple key-value pairs using '&' as the separator.
+        Examples: key=value (in https://example.com?key=value)
+
+    fragment: str
+        The fragment identifying a secondary resource.
+        The last part of the URL. The fragment section is denoted by '#'.
+        Examples: History
+        (in https://en.wikipedia.org/wiki/Python_(programming_language)#History)
+    """
+    
+    def __str__(self) -> str:
+        for fault in self.find_faults():
+            raise fault
+        return super().__str__()
+    
+    def find_faults(self) -> t.Generator[BaseException, None, None]:
+        if self.username == "" and self.password != "":
+            yield ValueError("Username not given but password given.")
+
+    def validate(self) -> bool:
+        return len(list(self.find_faults)) == 0
+
+
 class DirtyLocator(object):
     """
     A locator object representing a user-inputted URL (with parts possibly
