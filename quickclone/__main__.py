@@ -53,6 +53,11 @@ def conduct_tests(tests: t.List[str], remote_url: str) -> int:
         elif test == "parse_full_url":
             print(quickclone.remote.parser.parse_full_url(remote_url))
             success_counts += 1
+        elif test == "parse_dirty_url":
+            print(quickclone.remote.parser.parse_dirty_url(remote_url))
+            success_counts += 1
+        else:
+            print(f"Unrecognised test: {test}")
     return success_counts
 
 

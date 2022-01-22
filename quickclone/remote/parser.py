@@ -3,7 +3,12 @@ import re
 import typing as t
 
 
-def extract_groups(matches: re.Match, names: t.Iterable[str]) -> t.Dict[str, t.Optional[str]]:
+def extract_groups(
+    matches: re.Match,
+    names: t.Iterable[str],
+    none_str: str = "ignore",
+    combine: t.Optional[t.Mapping[str, t.List[str]]] = None
+) -> t.Dict[str, t.Optional[str]]:
     """
     Extract named groups from a `re.Match` object to a dictionary.
     These named groups are delimited by `(?P<name>)`.
@@ -16,17 +21,71 @@ def extract_groups(matches: re.Match, names: t.Iterable[str]) -> t.Dict[str, t.O
     names: Iterable[str]
         A list of named groups found in the regex string.
     
+    none_str: str = "ignore"
+        If "ignore", strings will be left as they are.
+        If "to_none", empty strings will be converted to `None`.
+        If "to_str", `None` will be converted to empty strings.
+    
+    combine: Optional[Mapping[str, List[str]]] = None
+        An optional list of named groups that are supposed to be treated as the
+        same named group.
+        For example: there may be 2 named groups called "path_type1" and
+        "path_type2". Each named group represents one type of "path" and only
+        1 of each type can occur in any given string. However, they are
+        intrisically still considered the same thing: a path. This parameter
+        allows you to specify that "path_type1" and "path_type2" should
+        be converted to "path" by passing
+        `extract_group(..., combine={"path": ["path_type1", "path_type2"], ...})`
+        in the final dictionary. However, if more than 1 of any of the 2
+        possible groups appear, a ValueError will be raised.
+        
+    Raises
+    ------
+    ValueError
+        If more than 1 named group in a group of related named groups are found,
+        this error is raised.
+        OR If an invalid value is given to none_str.
+    
     Returns
     -------
     Dict[str, Optional[str]]
         A dictionary of named groups and their associated values.
     """
+    if none_str not in {"ignore", "to_none", "to_str"}:
+        raise ValueError(f"Invalid none_str: {none_str}")
+    
+    def null_convert(input: t.Optional[str]) -> t.Optional[str]:
+        if (input is not None and input != "") or none_str == "ignore":
+            return input
+        elif none_str == "to_none":
+            return None
+        else:
+            return ""
+    
+    combine: t.Mapping[str, t.List[str]] = {} if combine is None else combine
     result = {}
     for name in names:
-        try:
-            result[name] = matches.group(name)
-        except IndexError:
-            result[name] = None
+        related_name_groups = combine.get(name)
+        related_name_groups = (
+            [name]
+            if related_name_groups is None
+            else related_name_groups
+        )
+        for related in related_name_groups:
+            try:
+                group_value = matches.group(related)
+            except IndexError:
+                group_value = None
+            group_value = null_convert(group_value)
+            if result.get(name) is not None and group_value is not None:
+                raise ValueError(
+                    f"'{name}' has already been filled by '{result.get(name)}' "
+                    f"but a new value ('{group_value}') was found."
+                )
+            else:
+                result[name] = group_value
+        if name not in result:
+            result[name] = None if none_str == "to_str" else ""
     return result
 
 
@@ -103,11 +162,8 @@ AUTHORITY_REGEX: re.Pattern[str] = re.compile(f"^{AUTHORITY_REGEX_RAW}$")
 
 
 SCHEME_REGEX_RAW: str = r"(?P<scheme>[a-zA-Z][a-zA-Z0-9+.-]*)"
-PATH_REGEX_RAW: str = (
-    r"(?P<path>"
-    f"(({CHAR}|[@])+(/({CHAR}|[@])+)*)/?|/?"
-    r")"
-)
+PATH_INTERNAL_REGEX_RAW: str = f"(({CHAR}|[@])+(/({CHAR}|[@])+)*)/?|/?"
+PATH_REGEX_RAW: str = r"(?P<path>" + PATH_INTERNAL_REGEX_RAW + r")"
 QUERY_REGEX_RAW: str = f"(?P<query>({CHAR}|[/\?])*)"
 FRAGMENT_REGEX_RAW: str = f"(?P<fragment>({CHAR}|[/\?])*)"
 
@@ -118,6 +174,21 @@ FULL_URL_REGEX_RAW: str = (
     r")"
 )
 FULL_URL_REGEX: re.Pattern[str] = re.compile(f"^{FULL_URL_REGEX_RAW}$")
+
+
+DIRTY_URL_REGEX_RAW: str = (
+    r"(?P<dirty_url>"
+    f"({SCHEME_REGEX_RAW}://)?"
+    r"("
+    f"(({AUTHORITY_REGEX_RAW})?)(/(?P<path_with_authority>{PATH_INTERNAL_REGEX_RAW}))?"
+    r"|"
+    f"(/?(?P<path_no_authority>{PATH_INTERNAL_REGEX_RAW})?)"
+    r")"
+    f"(\?{QUERY_REGEX_RAW})?"
+    f"(#{FRAGMENT_REGEX_RAW})?"
+    r")"
+)
+DIRTY_URL_REGEX: re.Pattern[str] = re.compile(f"^{DIRTY_URL_REGEX_RAW}$")
 
 
 def parse_authority(authority: str) -> t.Dict[str, t.Optional[str]]:
@@ -176,4 +247,28 @@ def parse_full_url(url: str) -> t.Dict[str, t.Optional[str]]:
             "query",
             "fragment"
         ]
+    )
+
+
+def parse_dirty_url(url: str) -> t.Dict[str, t.Optional[str]]:
+    matches = DIRTY_URL_REGEX.search(url)
+    if matches is None:
+        return {}
+    return extract_groups(
+        matches,
+        [
+            "dirty_url",
+            "scheme",
+            "authority",
+            "domain",
+            "ipv4",
+            "ipv6",
+            "username",
+            "password",
+            "port",
+            "path",
+            "query",
+            "fragment"
+        ],
+        combine={"path": ["path_with_authority", "path_no_authority"]}
     )
