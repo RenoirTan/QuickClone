@@ -251,6 +251,20 @@ def parse_full_url(url: str) -> t.Dict[str, t.Optional[str]]:
 
 
 def parse_dirty_url(url: str) -> t.Dict[str, t.Optional[str]]:
+    """
+    Parse a URL (assuming that it was inputted by a lazy human) and split it
+    into its constituent parts.
+    
+    Parameters
+    ----------
+    url: str
+        The user-inputted URL.
+    
+    Returns
+    -------
+    Dict[str, Optional[str]]
+        The parts of the URL.
+    """
     matches = DIRTY_URL_REGEX.search(url)
     if matches is None:
         return {}
