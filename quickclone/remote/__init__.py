@@ -319,11 +319,31 @@ class UniformResourceLocator(BaseLocator):
         return super().__str__()
     
     def find_faults(self) -> t.Generator[BaseException, None, None]:
+        """
+        Find errors in this URL. This method returns a generator object, which
+        allows you to iterate over this method.
+        
+        Returns
+        -------
+        Generator[BaseException, None, None]
+            A generator of errors. Each error that gets encountered by this
+            method will yield an exception (but not raise them,
+            you will have to do that yourself).
+        """
         if self.get_username() == "" and self.get_password() != "":
             yield ValueError("Username not given but password given.")
 
     def validate(self) -> bool:
-        return len(list(self.find_faults())) == 0
+        """
+        Validate this URL by making sure no errors are found in this URL.
+        This uses the `find_faults` method to try and find errors.
+        
+        Returns
+        -------
+        bool
+            `True` if this URL has no errors in it and `False` otherwise.
+        """
+        return sum(map(lambda _: 1, self.find_faults())) == 0
     
     @classmethod
     def from_user_and_defaults(
