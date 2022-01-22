@@ -5,7 +5,7 @@ from urllib.parse import urlparse, urlunparse, ParseResult
 
 import validators
 
-from . import parser
+from .parser import parse_authority
 
 
 class LocatorBuilder(object):
@@ -39,6 +39,11 @@ class LocatorBuilder(object):
         RFC 3986 recommends that you don't ever use this because it's a huge
         security vulnerability.
         However, this is still used by github when you use HTTPS.
+    
+    port: str = ""
+        The port used to connect to the server.
+        If present, must come after the host name and must be an integer
+        between 0 and 65535 (inclusive).
 
     path: str = ""
         The path to the remote repository
@@ -78,6 +83,7 @@ class LocatorBuilder(object):
         username: str = "",
         password: str = "",
         path: str = "",
+        port: str = "",
         query: str = "",
         fragment: str = ""
     ) -> None:
@@ -85,6 +91,7 @@ class LocatorBuilder(object):
         self.host = host
         self.username = username
         self.password = password
+        self.port = port
         self.path = path
         self.query = query
         self.fragment = fragment
@@ -104,6 +111,12 @@ class LocatorBuilder(object):
     def get_password(self) -> str:
         """Get the password used to access the remote repository."""
         return self.password
+    
+    def get_port(self) -> str:
+        """
+        Get the port used to access the server hosting the remote repository.
+        """
+        return self.get_port
 
     def get_path(self) -> str:
         """Get the path of the remote repository (in the website)."""
@@ -141,7 +154,7 @@ class LocatorBuilder(object):
 class UrlAuthority(object):
     """
     The authority component in a URL. This includes the host name, username
-    and password in the URL. Example: username:password@example.com.
+    password and port in the URL. Example: username:password@example.com:80
 
     Parameters
     ----------
@@ -156,17 +169,22 @@ class UrlAuthority(object):
 
     password: str = ""
         The password in the URL.
+    
+    port: str = ""
+        The port in the URL. Must be a value between 0 and 65535 (inclusive).
     """
 
     def __init__(
         self,
         host: str,
         username: str = "",
-        password: str = ""
+        password: str = "",
+        port: str = ""
     ) -> None:
         self.host = host
         self.username = username
         self.password = password
+        self.port = port
 
     @classmethod
     def process_authority(cls, authority: str) -> UrlAuthority:
@@ -187,41 +205,28 @@ class UrlAuthority(object):
             The authority section in the URL. This can be obtained from the
             `netloc` attribute from a `urllib.parse.ParseResult` object which
             is the return value from `urllib.parse.urlparse`.
+        
+        Raises
+        ------
+        ValueError
+            If password provided without providing username.
 
         Returns
         -------
         UrlAuthority
         """
-
-        colon_index = authority.find(":")
-        colon_rindex = authority.rfind(":")
-        if colon_index != colon_rindex:
-            raise ValueError("Multiple ':' found in {authority}")
-
-        at_index = authority.find("@")
-        at_rindex = authority.rfind("@")
-        if at_index != at_rindex:
-            raise ValueError("Multiple '@' found in {authority}")
-
-        if colon_index != -1 and at_index == -1:
-            username = authority[:colon_index]
-            hostname = authority[colon_index+1:]
-            raise ValueError(
-                f"Invalid syntax: {username}:{hostname}. Suggestion: {username}@{hostname}"
-            )
-
-        if at_index == -1:
-            hostname = authority
-            username, password = "", ""
-        else:
-            hostname = authority[at_index+1]
-            if colon_index == -1:
-                username = authority[:at_index]
-                password = ""
-            else:
-                username = authority[:colon_index]
-                password = authority[colon_index+1:at_index]
-        return cls(hostname, username, password)
+        result = parse_authority(authority, none_str="to_str")
+        host = result["domain"]
+        if len(host) < len(result["ipv4"]):
+            host = result["ipv4"]
+        if len(host) < len(result["ipv6"]):
+            host = result["ipv6"]
+        username = result["username"]
+        password = result["password"]
+        port = result["port"]
+        if username == "" and password != "":
+            raise ValueError("Password provided without username.")
+        return cls(host, username, password, port)
 
 
 def process_url_for_tentative_authority(url_parse_result: ParseResult) -> ParseResult:

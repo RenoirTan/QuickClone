@@ -77,12 +77,13 @@ def extract_groups(
             except IndexError:
                 group_value = None
             group_value = null_convert(group_value)
-            if result.get(name) is not None and group_value is not None:
+            current_value = result.get(name)
+            if current_value is not None and group_value is not None:
                 raise ValueError(
                     f"'{name}' has already been filled by '{result.get(name)}' "
                     f"but a new value ('{group_value}') was found."
                 )
-            else:
+            elif current_value is None:
                 result[name] = group_value
         if name not in result:
             result[name] = None if none_str == "to_str" else ""
@@ -180,7 +181,7 @@ DIRTY_URL_REGEX_RAW: str = (
     r"(?P<dirty_url>"
     f"({SCHEME_REGEX_RAW}://)?"
     r"("
-    f"(({AUTHORITY_REGEX_RAW})?)(/(?P<path_with_authority>{PATH_INTERNAL_REGEX_RAW}))?"
+    f"(({AUTHORITY_REGEX_RAW})?)(/(?P<path_with_authority>{PATH_INTERNAL_REGEX_RAW})?)"
     r"|"
     f"(/?(?P<path_no_authority>{PATH_INTERNAL_REGEX_RAW})?)"
     r")"
@@ -191,7 +192,7 @@ DIRTY_URL_REGEX_RAW: str = (
 DIRTY_URL_REGEX: re.Pattern[str] = re.compile(f"^{DIRTY_URL_REGEX_RAW}$")
 
 
-def parse_authority(authority: str) -> t.Dict[str, t.Optional[str]]:
+def parse_authority(authority: str, **kwargs: t.Any) -> t.Dict[str, t.Optional[str]]:
     """
     Parse the authority segment in a URL and split it into its consituent parts.
     
@@ -199,6 +200,9 @@ def parse_authority(authority: str) -> t.Dict[str, t.Optional[str]]:
     ----------
     authority: str
         The authority segment in a URL.
+    
+    **kwargs: Any
+        Keyword arguments to be passed to `extract_groups`.
     
     Returns
     -------
@@ -210,11 +214,12 @@ def parse_authority(authority: str) -> t.Dict[str, t.Optional[str]]:
         return {}
     return extract_groups(
         matches,
-        ["authority", "domain", "ipv4", "ipv6", "username", "password", "port"]
+        ["authority", "domain", "ipv4", "ipv6", "username", "password", "port"],
+        **kwargs
     )
 
 
-def parse_full_url(url: str) -> t.Dict[str, t.Optional[str]]:
+def parse_full_url(url: str, **kwargs: t.Any) -> t.Dict[str, t.Optional[str]]:
     """
     Parse a full URL and split it into its constituent parts.
     
@@ -222,6 +227,9 @@ def parse_full_url(url: str) -> t.Dict[str, t.Optional[str]]:
     ----------
     url: str
         The full URL.
+    
+    **kwargs: Any
+        Keyword arguments to be passed to `extract_groups`.
     
     Returns
     -------
@@ -246,11 +254,12 @@ def parse_full_url(url: str) -> t.Dict[str, t.Optional[str]]:
             "path",
             "query",
             "fragment"
-        ]
+        ],
+        **kwargs,
     )
 
 
-def parse_dirty_url(url: str) -> t.Dict[str, t.Optional[str]]:
+def parse_dirty_url(url: str, **kwargs: t.Any) -> t.Dict[str, t.Optional[str]]:
     """
     Parse a URL (assuming that it was inputted by a lazy human) and split it
     into its constituent parts.
@@ -260,6 +269,9 @@ def parse_dirty_url(url: str) -> t.Dict[str, t.Optional[str]]:
     url: str
         The user-inputted URL.
     
+    **kwargs: Any
+        Keyword arguments to be passed to `extract_groups`.
+    
     Returns
     -------
     Dict[str, Optional[str]]
@@ -268,6 +280,8 @@ def parse_dirty_url(url: str) -> t.Dict[str, t.Optional[str]]:
     matches = DIRTY_URL_REGEX.search(url)
     if matches is None:
         return {}
+    if "combine" not in kwargs:
+        kwargs["combine"] = {"path": ["path_with_authority", "path_no_authority"]}
     return extract_groups(
         matches,
         [
@@ -284,5 +298,5 @@ def parse_dirty_url(url: str) -> t.Dict[str, t.Optional[str]]:
             "query",
             "fragment"
         ],
-        combine={"path": ["path_with_authority", "path_no_authority"]}
+        **kwargs
     )
