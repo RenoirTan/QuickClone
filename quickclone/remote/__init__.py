@@ -435,6 +435,8 @@ class DirtyLocator(object):
         UrlAuthority
         """
         result = parse_dirty_url(dirty_url, none_str="to_str")
+        if result == {}:
+            raise ValueError(f"Could not match {dirty_url}")
         fields = {field: result[field] for field in FIELDS}
         return cls(**fields)
 
