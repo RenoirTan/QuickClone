@@ -1,5 +1,6 @@
 import shlex
 import shutil
+import subprocess
 import typing as t
 
 from quickclone.delegation.errors import CommandNotFoundError
@@ -23,6 +24,15 @@ class BaseCommand(object):
     
     def format_command_str(self) -> str:
         return shlex.join(self.format_command_list())
+    
+    def run(self) -> t.Union[subprocess.CompletedProcess, subprocess.SubprocessError]:
+        cl = self.format_command_list()
+        try:
+            process = subprocess.run(cl)
+        except subprocess.SubprocessError as se:
+            return se
+        else:
+            return process
 
 
 class Command(BaseCommand):
@@ -39,4 +49,7 @@ class Command(BaseCommand):
         super().__init__(location, *args, **kwargs)
     
     def format_command_list(self) -> t.List[str]:
-        return [self.location, *self.args]
+        kwarg_decomposed = []
+        for flag, argument in self.kwargs:
+            kwarg_decomposed.extend([flag, argument])
+        return [self.location, *self.args, *kwarg_decomposed]

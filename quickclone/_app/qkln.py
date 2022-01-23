@@ -1,8 +1,10 @@
 import argparse
 import typing as t
+import subprocess
 import sys
 
 from quickclone import DESCRIPTION, NAME, VERSION
+from quickclone.delegation.vcs.git import GitCloneCommand
 from quickclone.remote import DirtyLocator, LocatorBuilder, UniformResourceLocator, UrlAuthority
 
 
@@ -26,7 +28,16 @@ def create_argument_parser() -> argparse.ArgumentParser:
         metavar="REMOTE_URL",
         nargs="?",
         type=str,
+        default="",
         help="the url of the remote to be cloned"
+    )
+    app.add_argument(
+        "dest_path",
+        metavar="DEST_PATH",
+        nargs="?",
+        type=str,
+        default="",
+        help="the directory where the remote repository should be cloned to"
     )
     app.add_argument(
         "--test",
@@ -55,16 +66,28 @@ def main(argv: t.List[str]) -> int:
         else:
             return 0
     else:
-        dirty = DirtyLocator.process_dirty_url(args.remote_url)
-        builder = LocatorBuilder()
-        try:
-            final_url = UniformResourceLocator.from_user_and_defaults(dirty, builder)
-            print(f"Final URL: {str(final_url)}")
-        except Exception as e:
-            print(f"Error occurred:\n{e}")
-            return 1
-        else:
-            return 0
+        return normal(args)
+
+
+# Call this function if quickclone is run with the normal set of clargs.
+def normal(args: argparse.Namespace) -> int:
+    dirty = DirtyLocator.process_dirty_url(args.remote_url)
+    builder = LocatorBuilder()
+    try:
+        final_url = UniformResourceLocator.from_user_and_defaults(dirty, builder)
+        print(f"Final URL: {str(final_url)}")
+        print(f"Destination path: {str(args.dest_path)}")
+        git_clone_command = GitCloneCommand(str(final_url), args.dest_path)
+        result = git_clone_command.run()
+        if isinstance(result, subprocess.CompletedProcess):
+            print("Success!")
+        elif isinstance(result, subprocess.SubprocessError):
+            raise result
+    except Exception as e:
+        print(f"Error occurred:\n{e}")
+        return 1
+    else:
+        return 0
 
 
 def conduct_tests(tests: t.List[str], remote_url: str) -> t.Tuple[int, int]:
