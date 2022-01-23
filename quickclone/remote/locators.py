@@ -212,16 +212,17 @@ class BaseLocator(object):
         return scheme_part + authority_part + path_part + query_part + fragment_part
         
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(\
-scheme={repr(self.scheme)}, \
-host={repr(self.host)}, \
-username={repr(self.username)}, \
-password={repr(self.password)}, \
-port={repr(self.port)}, \
-path={repr(self.path)}, \
-query={repr(self.query)}, \
-fragment={repr(self.fragment)}\
-)"
+        return (
+            f"{self.__class__.__name__}("
+            f"scheme={repr(self.scheme)}, "
+            f"host={repr(self.host)}, "
+            f"username={repr(self.username)}, "
+            f"password={repr(self.password)}, "
+            f"port={repr(self.port)}, "
+            f"path={repr(self.path)}, "
+            f"query={repr(self.query)}, "
+            f"fragment={repr(self.fragment)})"
+        )
     
     def __iter__(self) -> t.Generator[t.Tuple[str, str], None, None]:
         yield "scheme", self.get_scheme()
