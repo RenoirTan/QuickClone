@@ -6,6 +6,10 @@ from quickclone import DESCRIPTION, NAME, VERSION
 from quickclone.remote import DirtyLocator, LocatorBuilder, UniformResourceLocator, UrlAuthority
 
 
+def program():
+    sys.exit(main(sys.argv))
+
+
 def create_argument_parser() -> argparse.ArgumentParser:
     app = argparse.ArgumentParser(description=f"{NAME} v{VERSION}: {DESCRIPTION}")
     app.add_argument(
@@ -87,4 +91,4 @@ def conduct_tests(tests: t.List[str], remote_url: str) -> t.Tuple[int, int]:
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv))
+    program()
