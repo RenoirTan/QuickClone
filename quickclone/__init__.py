@@ -1,3 +1,5 @@
+from . import remote
+
 VERSION: str = "0.1.0"
 """
 Current version of QuickClone
