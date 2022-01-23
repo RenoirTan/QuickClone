@@ -1,5 +1,3 @@
-import sys
-
 from quickclone._app import qkln
 
 
