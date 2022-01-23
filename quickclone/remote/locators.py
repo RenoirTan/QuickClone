@@ -332,12 +332,11 @@ class UniformResourceLocator(BaseLocator):
         Find errors in this URL. This method returns a generator object, which
         allows you to iterate over this method.
         
-        Returns
-        -------
-        Generator[BaseException, None, None]
-            A generator of errors. Each error that gets encountered by this
-            method will yield an exception (but not raise them,
-            you will have to do that yourself).
+        Yields
+        ------
+        BaseException
+            All the errors that are encountered when reviewing the URL. If no
+            errors are found, no exceptions will be yielded.
         """
         if self.get_username() == "" and self.get_password() != "":
             yield ValueError("Username not given but password given.")
