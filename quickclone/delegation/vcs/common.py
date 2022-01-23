@@ -5,17 +5,17 @@ import typing as t
 from quickclone.delegation.errors import CommandNotFoundError
 
 
-__all__ = ["BaseVCSCommand", "VCSCommand"]
+__all__ = ["BaseCommand", "Command"]
 
 
-class BaseVCSCommand(object):
+class BaseCommand(object):
     """
-    Base class for representing commands of different VCS programs.
+    Base class for representing commands.
     """
     
-    def __init__(self, location: str = "", action: str = "", *args, **kwargs) -> None:
+    def __init__(self, location: str = "", *args: t.Any, **kwargs: t.Any) -> None:
         self.location = location
-        self.action = action
+        self.args = args
         self.kwargs = kwargs
     
     def format_command_list(self) -> t.List[str]:
@@ -25,18 +25,18 @@ class BaseVCSCommand(object):
         return shlex.join(self.format_command_list())
 
 
-class VCSCommand(BaseVCSCommand):
+class Command(BaseCommand):
     """
-    Basic VCSCommand. Uses `echo` as the dummy command.
+    Basic command. Uses `echo` as a dummy command.
     """
     
-    NAME: str = "echo" # Dummy command
+    COMMAND_NAME: str = "echo" # Dummy command
     
-    def __init__(self, action: str = "", *args, **kwargs) -> None:
-        location = shutil.which(self.NAME)
+    def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
+        location = shutil.which(self.COMMAND_NAME)
         if location is None:
-            raise CommandNotFoundError(self.NAME)
-        super().__init__(location, action, *args, **kwargs)
+            raise CommandNotFoundError(self.COMMAND_NAME)
+        super().__init__(location, *args, **kwargs)
     
     def format_command_list(self) -> t.List[str]:
         return [self.location, *self.args]
