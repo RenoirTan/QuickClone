@@ -8,7 +8,11 @@ def make_path(path: str) -> str:
     if path == "":
         return ""
     else:
-        return str(Path(path))
+        ppath = Path(path)
+        if ppath.suffix in {".git"}:
+            return ppath.with_suffix("")
+        else:
+            return ppath
 
 
 def local_dest_path(
@@ -50,4 +54,4 @@ def local_dest_path(
         if user_input != "":
             return make_path(user_input)
         else:
-            return str(Path(remotes_dir) / Path(host) / Path(path))
+            return make_path(Path(remotes_dir) / Path(host) / Path(path))
