@@ -8,6 +8,7 @@ from quickclone.config.common import DEFAULTS_FOLDER
 from quickclone.config.configurator import load_user_config
 from quickclone.delegation.vcs.common import Command
 from quickclone.delegation.vcs.git import GitCloneCommand
+from quickclone.local import local_dest_path
 from quickclone.remote import DirtyLocator, UniformResourceLocator, UrlAuthority
 
 
@@ -43,6 +44,16 @@ def create_argument_parser() -> argparse.ArgumentParser:
         help="the directory where the remote repository should be cloned to"
     )
     app.add_argument(
+        "--ignore",
+        "-I",
+        dest="ignore",
+        metavar="CONFIG_KEY",
+        action="append",
+        required=False,
+        default=[],
+        help="what part of the config file to ignore"
+    )
+    app.add_argument(
         "--test",
         "-T",
         dest="tests",
@@ -53,6 +64,13 @@ def create_argument_parser() -> argparse.ArgumentParser:
         help="which tests to conduct: parse_authority, parse_full_url"
     )
     return app
+
+
+def ignore_config(keys: t.List[str]) -> t.Set[str]:
+    ignored = set(keys)
+    if "d" in keys:
+        ignored.add("options.local.remotes_dir")
+    return ignored
 
 
 def main(argv: t.List[str]) -> int:
@@ -75,12 +93,20 @@ def main(argv: t.List[str]) -> int:
 # Call this function if quickclone is run with the normal set of clargs.
 def normal(args: argparse.Namespace) -> int:
     dirty = DirtyLocator.process_dirty_url(args.remote_url)
+    ignored = ignore_config(args.ignore)
     try:
         configs = load_user_config()
         builder = configs.to_locator_builder()
         final_url = UniformResourceLocator.from_user_and_defaults(dirty, builder)
         print(f"Final URL: {str(final_url)}")
-        print(f"Destination path: {str(args.dest_path)}")
+        dest_path = local_dest_path(
+            args.dest_path,
+            configs.from_dotted_string("options.local.remotes_dir"),
+            final_url.get_host(),
+            final_url.get_path(),
+            "options.local.remotes_dir" in ignored
+        )
+        print(f"Destination path: {dest_path}")
         git_clone_command = GitCloneCommand(str(final_url), args.dest_path)
         #run_command(git_clone_command)
     except Exception as e:
