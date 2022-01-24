@@ -67,9 +67,17 @@ class Configurator(object):
 
 
 DEFAULT_CONFIGURATION = Configurator.from_file(DEFAULTS_FOLDER / "quickclone.toml")
+"""
+An object storing the default configs for QuickClone.
+"""
 
 
 class SmartConfigurator(Configurator):
+    """
+    A child class of `Configurator` which can grab missing config items
+    from `DEFAULT_CONFIGURATION`.
+    """
+    
     def __getitem__(self, key: t.Union[str, t.Iterable[str]]) -> t.Any:
         result = super().__getitem__(key)
         if result is None:
@@ -79,6 +87,23 @@ class SmartConfigurator(Configurator):
 
 
 def load_user_config(path: t.Optional[Path] = None) -> SmartConfigurator:
+    """
+    Load the user's config. If no config file is found, an empty
+    `SmartConfigurator` will be returned and the defaults stored in
+    `DEFAULT_CONFIGURATION` will be used instead.
+    
+    Parameters
+    ----------
+    path: Optional[Path] = None
+        Path to the user's config files. The default argument should not be
+        overridden unless necessary. If path is `None`, this function will
+        try to look for the file at `USER_CONFIG_FILE`.
+    
+    Returns
+    -------
+    SmartConfigurator
+        The user's configuration.
+    """
     path = USER_CONFIG_FILE if path is None else path
     if path.exists() and path.is_file():
         return SmartConfigurator.from_file(path)
