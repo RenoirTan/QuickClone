@@ -124,8 +124,8 @@ def test_config_file() -> bool:
     try:
         config = load_user_config()
         print(config)
-        for key in map(lambda s: s.split("."), ["options.remote.scheme"]):
-            print(f"{key}: {config[key]}")
+        for key in ["options.remote.scheme"]:
+            print(f"{key}: {config.from_dotted_string(key)}")
     except Exception as e:
         print(e)
         return False

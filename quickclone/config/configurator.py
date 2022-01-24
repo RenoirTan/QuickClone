@@ -30,6 +30,22 @@ class Configurator(object):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(configuration={self.configuration})"
     
+    def from_dotted_string(self, key: str) -> t.Optional[t.Any]:
+        """
+        Retrieve an item using a dot-separated key.
+        
+        Parameters
+        ----------
+        key: str
+            The dot-separated key to the item.
+        
+        Returns
+        -------
+        Optional[Any]
+            The item associated with the key.
+        """
+        return self[key.split(".")]
+    
     @classmethod
     def from_file(cls, path: Path) -> Configurator:
         """
