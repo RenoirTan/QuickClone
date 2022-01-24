@@ -9,6 +9,11 @@ from .common import DEFAULTS_FOLDER, USER_CONFIG_FILE
 
 
 class Configurator(object):
+    """
+    A wrapper around a configuration file meant for QuickClone. This class
+    has special methods for retrieving nested items.
+    """
+    
     def __init__(self, configuration: t.Mapping[str, t.Any]) -> None:
         self.configuration = configuration
     
@@ -27,6 +32,20 @@ class Configurator(object):
     
     @classmethod
     def from_file(cls, path: Path) -> Configurator:
+        """
+        Load the configuration from a file.
+        
+        Parameters
+        ----------
+        path: Path
+            Path to the configuration file.
+        
+        Returns
+        -------
+        Configurator
+            The configuration loaded from the file stored as a `Configurator`
+            object.
+        """
         configuration = toml.load(path)
         return cls(configuration)
 
