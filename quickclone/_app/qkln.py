@@ -44,6 +44,18 @@ def create_argument_parser() -> argparse.ArgumentParser:
         help="the directory where the remote repository should be cloned to"
     )
     app.add_argument(
+        "--pretend",
+        "-P",
+        dest="pretend",
+        action="store_const",
+        const=True,
+        default=False,
+        help=(
+            "if this flag is found, QuickClone will not perform any important "
+            "actions that it would have if this flag is not found"
+        )
+    )
+    app.add_argument(
         "--ignore",
         "-I",
         dest="ignore",
@@ -108,7 +120,10 @@ def normal(args: argparse.Namespace) -> int:
         )
         print(f"Destination path: {dest_path}")
         git_clone_command = GitCloneCommand(str(final_url), args.dest_path)
-        #run_command(git_clone_command)
+        if args.pretend:
+            print("pretend flag found! Not executing command.")
+        else:
+            run_command(git_clone_command)
     except Exception as e:
         print(f"Error occurred:\n{e}")
         return 1
