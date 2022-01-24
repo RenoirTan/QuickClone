@@ -1,10 +1,11 @@
 from __future__ import annotations
 from pathlib import Path
 import typing as t
+from urllib.parse import urlencode
 
 import toml
 
-
+from quickclone.remote.locators import LocatorBuilder
 from .common import DEFAULTS_FOLDER, USER_CONFIG_FILE
 
 
@@ -17,15 +18,15 @@ class Configurator(object):
     def __init__(self, configuration: t.Mapping[str, t.Any]) -> None:
         self.configuration = configuration
     
-    def __getitem__(self, key: t.Union[str, t.Iterable[str]]) -> t.Optional[t.Any]:
+    def __getitem__(self, key: t.Union[str, t.Iterable[str]]) -> t.Any:
         if type(key) == str:
             return self.configuration.get(key)
         container = self.configuration
         for part in key:
             container = container.get(part)
             if container is None:
-                return None
-        return container
+                return ""
+        return container if container is not None else ""
     
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(configuration={self.configuration})"
@@ -41,10 +42,44 @@ class Configurator(object):
         
         Returns
         -------
-        Optional[Any]
+        Any
             The item associated with the key.
         """
         return self[key.split(".")]
+    
+    def to_locator_builder(self) -> LocatorBuilder:
+        """
+        Create a `LocatorBuilder` from the configs stored in this object.
+        
+        Returns
+        -------
+        LocatorBuilder
+            The final `LocatorBuilder` object.
+        """
+        scheme = self.from_dotted_string("options.remote.scheme")
+        host = self.from_dotted_string("options.remote.host")
+        username = self.from_dotted_string("options.remote.username")
+        password = self.from_dotted_string("options.remote.password")
+        if password != "":
+            print("I might remove passwords because it's a safety hazard.")
+        port = self.from_dotted_string("options.remote.port")
+        base_path = self.from_dotted_string("options.remote.base_path")
+        path = self.from_dotted_string("options.remote.path")
+        query = self.from_dotted_string("options.remote.query")
+        fragment = self.from_dotted_string("options.remote.fragment")
+        if type(query) == dict:
+            query = urlencode(query)
+        return LocatorBuilder(
+            scheme=scheme,
+            host=host,
+            username=username,
+            password=password,
+            port=port,
+            base_path=base_path,
+            path=path,
+            query=query,
+            fragment=fragment
+        )
     
     @classmethod
     def from_file(cls, path: Path) -> Configurator:
@@ -80,7 +115,7 @@ class SmartConfigurator(Configurator):
     
     def __getitem__(self, key: t.Union[str, t.Iterable[str]]) -> t.Any:
         result = super().__getitem__(key)
-        if result is None:
+        if result == "":
             return DEFAULT_CONFIGURATION[key]
         else:
             return result

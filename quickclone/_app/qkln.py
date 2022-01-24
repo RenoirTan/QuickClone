@@ -6,8 +6,9 @@ import sys
 from quickclone import DESCRIPTION, NAME, VERSION
 from quickclone.config.common import DEFAULTS_FOLDER
 from quickclone.config.configurator import load_user_config
+from quickclone.delegation.vcs.common import Command
 from quickclone.delegation.vcs.git import GitCloneCommand
-from quickclone.remote import DirtyLocator, LocatorBuilder, UniformResourceLocator, UrlAuthority
+from quickclone.remote import DirtyLocator, UniformResourceLocator, UrlAuthority
 
 
 def program():
@@ -74,22 +75,27 @@ def main(argv: t.List[str]) -> int:
 # Call this function if quickclone is run with the normal set of clargs.
 def normal(args: argparse.Namespace) -> int:
     dirty = DirtyLocator.process_dirty_url(args.remote_url)
-    builder = LocatorBuilder()
     try:
+        configs = load_user_config()
+        builder = configs.to_locator_builder()
         final_url = UniformResourceLocator.from_user_and_defaults(dirty, builder)
         print(f"Final URL: {str(final_url)}")
         print(f"Destination path: {str(args.dest_path)}")
         git_clone_command = GitCloneCommand(str(final_url), args.dest_path)
-        result = git_clone_command.run()
-        if isinstance(result, subprocess.CompletedProcess):
-            print("Success!")
-        elif isinstance(result, subprocess.SubprocessError):
-            raise result
+        #run_command(git_clone_command)
     except Exception as e:
         print(f"Error occurred:\n{e}")
         return 1
     else:
         return 0
+
+
+def run_command(command: Command) -> subprocess.CompletedProcess:
+    result = command.run()
+    if isinstance(result, subprocess.CompletedProcess):
+        return result
+    elif isinstance(result, subprocess.SubprocessError):
+        raise result
 
 
 def conduct_tests(tests: t.List[str], remote_url: str) -> t.Tuple[int, int]:
