@@ -14,4 +14,3 @@ parameter = "argument"
 
 [options.local]
 remotes_dir = "~/Code/remote"
-to_remotes_dir = true
