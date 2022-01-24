@@ -20,12 +20,38 @@ class BaseCommand(object):
         self.kwargs = kwargs
     
     def format_command_list(self) -> t.List[str]:
+        """
+        Convert this command into a list of command-line arguments.
+        
+        Returns
+        -------
+        List[str]
+            A list of arguments in the command.
+        """
         return []
     
     def format_command_str(self) -> str:
+        """
+        Convert this command into command-line arguments joined together as a
+        single string.
+        
+        Returns
+        -------
+        str
+            This command's command-line arguments as a single string.
+        """
         return shlex.join(self.format_command_list())
     
     def run(self) -> t.Union[subprocess.CompletedProcess, subprocess.SubprocessError]:
+        """
+        Run the command represented by this object using Python's subprocess
+        module and return the result from `subprocess.run`.
+        
+        Returns
+        -------
+        subprocess.CompletedProcess | subprocess.SubprocessError
+            The result of running the command.
+        """
         cl = self.format_command_list()
         try:
             process = subprocess.run(cl)
