@@ -4,6 +4,8 @@ import subprocess
 import sys
 
 from quickclone import DESCRIPTION, NAME, VERSION
+from quickclone.config.common import DEFAULTS_FOLDER
+from quickclone.config.configurator import load_user_config
 from quickclone.delegation.vcs.git import GitCloneCommand
 from quickclone.remote import DirtyLocator, LocatorBuilder, UniformResourceLocator, UrlAuthority
 
@@ -106,11 +108,29 @@ def conduct_tests(tests: t.List[str], remote_url: str) -> t.Tuple[int, int]:
                 dirty_url = DirtyLocator.process_dirty_url(remote_url)
                 print(dirty_url)
                 success_counts += 1
+            elif test == "print_defaults_folder":
+                print(DEFAULTS_FOLDER)
+                success_counts += 1
+            elif test == "config_file":
+                success_counts += int(test_config_file())
             else:
                 print(f"Unrecognised test: {test}")
         except:
             pass
     return success_counts, len(tests)
+
+
+def test_config_file() -> bool:
+    try:
+        config = load_user_config()
+        print(config)
+        for key in map(lambda s: s.split("."), ["options.remote.scheme"]):
+            print(f"{key}: {config[key]}")
+    except Exception as e:
+        print(e)
+        return False
+    else:
+        return True
 
 
 if __name__ == "__main__":
