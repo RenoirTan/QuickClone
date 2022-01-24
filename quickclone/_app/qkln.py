@@ -1,4 +1,5 @@
 import argparse
+from pathlib import Path
 import typing as t
 import subprocess
 import sys
@@ -119,12 +120,14 @@ def normal(args: argparse.Namespace) -> int:
             "options.local.remotes_dir" in ignored
         )
         print(f"Destination path: {dest_path}")
-        git_clone_command = GitCloneCommand(str(final_url), args.dest_path)
+        git_clone_command = GitCloneCommand(str(final_url), str(Path(dest_path).expanduser()))
+        print(f"Command> {git_clone_command.format_command_str()}")
         if args.pretend:
             print("pretend flag found! Not executing command.")
         else:
             run_command(git_clone_command)
     except Exception as e:
+        raise e
         print(f"Error occurred:\n{e}")
         return 1
     else:
