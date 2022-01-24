@@ -120,7 +120,7 @@ def normal(args: argparse.Namespace) -> int:
             "options.local.remotes_dir" in ignored
         )
         print(f"Destination path: {dest_path}")
-        git_clone_command = GitCloneCommand(str(final_url), str(Path(dest_path).expanduser()))
+        git_clone_command = GitCloneCommand(str(final_url), dest_path)
         print(f"Command> {git_clone_command.format_command_str()}")
         if args.pretend:
             print("pretend flag found! Not executing command.")

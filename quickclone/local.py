@@ -8,11 +8,11 @@ def make_path(path: str) -> str:
     if path == "":
         return ""
     else:
-        ppath = Path(path)
+        ppath = Path(path).expanduser()
         if ppath.suffix in {".git"}:
-            return ppath.with_suffix("")
+            return str(ppath.with_suffix(""))
         else:
-            return ppath
+            return str(ppath)
 
 
 def local_dest_path(
