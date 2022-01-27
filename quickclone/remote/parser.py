@@ -222,6 +222,21 @@ DIRTY_URL_REGEX_RAW: str = (
 DIRTY_URL_REGEX: re.Pattern[str] = re.compile(f"^{DIRTY_URL_REGEX_RAW}$")
 
 
+SCP_FULL_LOC_REGEX_RAW: str = (
+    r"(?P<scp_full>"
+    f"{AUTHORITY_REGEX_RAW}(:{PATH_REGEX_RAW})?"
+    r")"
+)
+SCP_FULL_LOC_REGEX: re.Pattern[str] = re.compile(f"^{SCP_FULL_LOC_REGEX_RAW}$")
+
+SCP_DIRTY_LOC_REGEX_RAW: str = (
+    r"(?P<scp_dirty>"
+    f"({AUTHORITY_REGEX_RAW})?(:{PATH_REGEX_RAW})?"
+    r")"
+)
+SCP_DIRTY_LOC_REGEX: re.Pattern[str] = re.compile(f"^{SCP_DIRTY_LOC_REGEX_RAW}$")
+
+
 parse_authority = make_parser(
     AUTHORITY_REGEX,
     ["authority", "host", "domain", "ipv4", "ipv6", "username", "password", "port"]
@@ -313,4 +328,69 @@ Returns
 -------
 Dict[str, Optional[str]]
     The parts of the URL.
+"""
+
+
+parse_scp_full_loc = make_parser(
+    SCP_FULL_LOC_REGEX,
+    [
+        "scp_full",
+        "authority",
+        "host",
+        "domain",
+        "ipv4",
+        "ipv6",
+        "username",
+        "password",
+        "path"
+    ]
+)
+"""
+Parse a full SCP (secure copy) locator and split it into its constituent parts.
+
+Parameters
+----------
+url: str
+    The full URL.
+
+**kwargs: Any
+    Keyword arguments to be passed to `extract_groups`.
+
+Returns
+-------
+Dict[str, Optional[str]]
+    The parts of the locator.
+"""
+
+
+parse_scp_dirty_loc = make_parser(
+    SCP_DIRTY_LOC_REGEX,
+    [
+        "scp_dirty",
+        "authority",
+        "host",
+        "domain",
+        "ipv4",
+        "ipv6",
+        "username",
+        "password",
+        "path"
+    ]
+)
+"""
+Parse a SCP locator (assuming that it was inputted by a lazy human) and split it
+into its constituent parts.
+
+Parameters
+----------
+url: str
+    The user-inputted URL.
+
+**kwargs: Any
+    Keyword arguments to be passed to `extract_groups`.
+
+Returns
+-------
+Dict[str, Optional[str]]
+    The parts of the locator.
 """
