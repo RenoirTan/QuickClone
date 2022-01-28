@@ -71,7 +71,11 @@ def create_argument_parser() -> argparse.ArgumentParser:
         action="append",
         required=False,
         default=[],
-        help="what part of the config file to ignore"
+        help=(
+            "what part of the config file to ignore. "
+            "you can use dot-separated keys (like 'options.local.remotes_dir') or "
+            "their short forms to specify which config values to ignore"
+        )
     )
     app.add_argument(
         "--test",
@@ -81,7 +85,10 @@ def create_argument_parser() -> argparse.ArgumentParser:
         action="append",
         required=False,
         default=[],
-        help="which tests to conduct: parse_authority, parse_full_url"
+        help=(
+            "which tests to conduct: "
+            "parse_authority, parse_full_url, parse_dirty_url, print_defaults_folder, config_file"
+        )
     )
     return app
 
