@@ -57,6 +57,13 @@ def create_argument_parser() -> argparse.ArgumentParser:
         )
     )
     app.add_argument(
+        "--config-file",
+        "-C",
+        dest="config_file",
+        metavar="CONFIG_FILE_PATH",
+        help="override the default config file location"
+    )
+    app.add_argument(
         "--ignore",
         "-I",
         dest="ignore",
@@ -108,7 +115,7 @@ def normal(args: argparse.Namespace) -> int:
     dirty = DirtyLocator.process_dirty_url(args.remote_url)
     ignored = ignore_config(args.ignore)
     try:
-        configs = load_user_config()
+        configs = load_user_config(None if args.config_file is None else Path(args.config_file))
         builder = configs.to_locator_builder()
         built_url = UniformResourceLocator.from_user_and_defaults(dirty, builder)
         final_url = remote_to_string(built_url, "git")
