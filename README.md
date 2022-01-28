@@ -8,10 +8,6 @@ This project is a prime example of spending 24 hours to save 2 seconds.
 Currently, only git is supported. I might add mercurial and then subversion
 later.
 
-SSH links as you know it are not well supported. However, links like
-`ssh://git@github.com/RenoirTan/QuickClone.git` still work the same as
-`git@github.com:RenoirTan/QuickClone.git`.
-
 ## Installation
 
 From source:

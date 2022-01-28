@@ -4,6 +4,7 @@ command = "git"
 [options]
 
 [options.remote]
+force_scp = false
 scheme = "https"
 host = "github.com"
 base_path = ""

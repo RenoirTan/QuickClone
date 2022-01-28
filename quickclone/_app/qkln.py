@@ -10,7 +10,7 @@ from quickclone.config.configurator import load_user_config
 from quickclone.delegation.vcs.common import Command
 from quickclone.delegation.vcs.git import GitCloneCommand
 from quickclone.local import local_dest_path
-from quickclone.remote import DirtyLocator, UniformResourceLocator, UrlAuthority
+from quickclone.remote import DirtyLocator, UniformResourceLocator, UrlAuthority, remote_to_string
 
 
 def program():
@@ -57,6 +57,13 @@ def create_argument_parser() -> argparse.ArgumentParser:
         )
     )
     app.add_argument(
+        "--config-file",
+        "-C",
+        dest="config_file",
+        metavar="CONFIG_FILE_PATH",
+        help="override the default config file location"
+    )
+    app.add_argument(
         "--ignore",
         "-I",
         dest="ignore",
@@ -64,7 +71,11 @@ def create_argument_parser() -> argparse.ArgumentParser:
         action="append",
         required=False,
         default=[],
-        help="what part of the config file to ignore"
+        help=(
+            "what part of the config file to ignore. "
+            "you can use dot-separated keys (like 'options.local.remotes_dir') or "
+            "their short forms to specify which config values to ignore"
+        )
     )
     app.add_argument(
         "--test",
@@ -74,15 +85,23 @@ def create_argument_parser() -> argparse.ArgumentParser:
         action="append",
         required=False,
         default=[],
-        help="which tests to conduct: parse_authority, parse_full_url"
+        help=(
+            "which tests to conduct: "
+            "parse_authority, parse_full_url, parse_dirty_url, print_defaults_folder, config_file"
+        )
     )
     return app
 
 
 def ignore_config(keys: t.List[str]) -> t.Set[str]:
+    SHORT_FORMS = {
+        "d": "options.local.remotes_dir",
+        "s": "options.remote.force_scp"
+    }
     ignored = set(keys)
-    if "d" in keys:
-        ignored.add("options.local.remotes_dir")
+    for short, long in SHORT_FORMS.items():
+        if short in keys:
+            ignored.add(long)
     return ignored
 
 
@@ -108,19 +127,27 @@ def normal(args: argparse.Namespace) -> int:
     dirty = DirtyLocator.process_dirty_url(args.remote_url)
     ignored = ignore_config(args.ignore)
     try:
-        configs = load_user_config()
+        configs = load_user_config(None if args.config_file is None else Path(args.config_file))
         builder = configs.to_locator_builder()
-        final_url = UniformResourceLocator.from_user_and_defaults(dirty, builder)
+        built_url = UniformResourceLocator.from_user_and_defaults(dirty, builder)
+        built_url.kwargs["explicit_scp"] = (
+            (
+                configs.from_dotted_string("options.remote.force_scp")
+                and not "options.remote.force_scp" in ignored
+            ) or
+            built_url.kwargs.get("explicit_scp")
+        )
+        final_url = remote_to_string(built_url, "git")
         print(f"Final URL: {str(final_url)}")
         dest_path = local_dest_path(
             args.dest_path,
             configs.from_dotted_string("options.local.remotes_dir"),
-            final_url.get_host(),
-            final_url.get_path(),
+            built_url.get_host(),
+            built_url.get_path(),
             "options.local.remotes_dir" in ignored
         )
         print(f"Destination path: {dest_path}")
-        git_clone_command = GitCloneCommand(str(final_url), dest_path)
+        git_clone_command = GitCloneCommand(final_url, dest_path)
         print(f"Command> {git_clone_command.format_command_str()}")
         if args.pretend:
             print("pretend flag found! Not executing command.")

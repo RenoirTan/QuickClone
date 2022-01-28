@@ -90,6 +90,39 @@ def extract_groups(
     return result
 
 
+def make_parser(
+    regex: re.Pattern[str],
+    names: t.Iterable[str]
+) -> t.Callable[[str, t.Mapping[t.str, t.Any]], t.Dict[str, t.Optional[str]]]:
+    """
+    Create a function that can parse locators.
+    
+    Parameters
+    ----------
+    regex: re.Pattern[str]
+        A compiled regex pattern. You can create such an object by calling
+        `re.compile` on a regex string.
+    
+    names: Iterable[str]
+        A list of named groups that the parser should encounter in the regex
+        matches.
+    
+    Returns
+    -------
+    Callable[[str, Mapping[t.Str, Any]], Dict[str, Optional[str]]]
+        The parser function.
+    """
+    
+    def parser(input: str, **kwargs: t.Any) -> t.Dict[str, t.Optional[str]]:
+        matches = regex.search(input)
+        if matches is None:
+            return {}
+        else:
+            return extract_groups(matches, names, **kwargs)
+    
+    return parser
+
+
 UNRESERVED: str = r"[0-9a-zA-Z._~\-]"
 PERCENT_ENCODED: str = r"%[0-9a-fA-F]{2}"
 SUB_DELIMS: str = r"[!\$&'\(\)\*\+\,\;\=]"
@@ -165,6 +198,7 @@ AUTHORITY_REGEX: re.Pattern[str] = re.compile(f"^{AUTHORITY_REGEX_RAW}$")
 SCHEME_REGEX_RAW: str = r"(?P<scheme>[a-zA-Z][a-zA-Z0-9+.-]*)"
 PATH_INTERNAL_REGEX_RAW: str = f"(({CHAR}|[@])+(/({CHAR}|[@])+)*)/?|/?"
 PATH_REGEX_RAW: str = r"(?P<path>" + PATH_INTERNAL_REGEX_RAW + r")"
+SCP_PATH_REGEX_RAW: str = r"(?P<path>/?" + PATH_INTERNAL_REGEX_RAW + r")"
 QUERY_REGEX_RAW: str = f"(?P<query>({CHAR}|[/\?])*)"
 FRAGMENT_REGEX_RAW: str = f"(?P<fragment>({CHAR}|[/\?])*)"
 
@@ -189,111 +223,175 @@ DIRTY_URL_REGEX_RAW: str = (
 DIRTY_URL_REGEX: re.Pattern[str] = re.compile(f"^{DIRTY_URL_REGEX_RAW}$")
 
 
-def parse_authority(authority: str, **kwargs: t.Any) -> t.Dict[str, t.Optional[str]]:
-    """
-    Parse the authority segment in a URL and split it into its consituent parts.
-    
-    Parameters
-    ----------
-    authority: str
-        The authority segment in a URL.
-    
-    **kwargs: Any
-        Keyword arguments to be passed to `extract_groups`.
-    
-    Returns
-    -------
-    Dict[str, Optional[str]]
-        The parts of the authority segment.
-    """
-    matches = AUTHORITY_REGEX.search(authority)
-    if matches is None:
-        return {}
-    return extract_groups(
-        matches,
-        ["authority", "host", "domain", "ipv4", "ipv6", "username", "password", "port"],
-        **kwargs
-    )
+SCP_FULL_LOC_REGEX_RAW: str = (
+    r"(?P<scp_full>"
+    f"{AUTHORITY_REGEX_RAW}(:{SCP_PATH_REGEX_RAW})?"
+    r")"
+)
+SCP_FULL_LOC_REGEX: re.Pattern[str] = re.compile(f"^{SCP_FULL_LOC_REGEX_RAW}$")
+
+SCP_DIRTY_LOC_REGEX_RAW: str = (
+    r"(?P<scp_dirty>"
+    f"({AUTHORITY_REGEX_RAW})?(:{SCP_PATH_REGEX_RAW})?"
+    r")"
+)
+SCP_DIRTY_LOC_REGEX: re.Pattern[str] = re.compile(f"^{SCP_DIRTY_LOC_REGEX_RAW}$")
 
 
-def parse_full_url(url: str, **kwargs: t.Any) -> t.Dict[str, t.Optional[str]]:
-    """
-    Parse a full URL and split it into its constituent parts.
-    
-    Parameters
-    ----------
-    url: str
-        The full URL.
-    
-    **kwargs: Any
-        Keyword arguments to be passed to `extract_groups`.
-    
-    Returns
-    -------
-    Dict[str, Optional[str]]
-        The parts of the URL.
-    """
-    matches = FULL_URL_REGEX.search(url)
-    if matches is None:
-        return {}
-    return extract_groups(
-        matches,
-        [
-            "full_url",
-            "scheme",
-            "authority",
-            "host",
-            "domain",
-            "ipv4",
-            "ipv6",
-            "username",
-            "password",
-            "port",
-            "path",
-            "query",
-            "fragment"
-        ],
-        **kwargs,
-    )
+parse_authority = make_parser(
+    AUTHORITY_REGEX,
+    ["authority", "host", "domain", "ipv4", "ipv6", "username", "password", "port"]
+)
+"""
+Parse the authority segment in a URL and split it into its consituent parts.
+
+Parameters
+----------
+authority: str
+    The authority segment in a URL.
+
+**kwargs: Any
+    Keyword arguments to be passed to `extract_groups`.
+
+Returns
+-------
+Dict[str, Optional[str]]
+    The parts of the authority segment.
+"""
 
 
-def parse_dirty_url(url: str, **kwargs: t.Any) -> t.Dict[str, t.Optional[str]]:
-    """
-    Parse a URL (assuming that it was inputted by a lazy human) and split it
-    into its constituent parts.
-    
-    Parameters
-    ----------
-    url: str
-        The user-inputted URL.
-    
-    **kwargs: Any
-        Keyword arguments to be passed to `extract_groups`.
-    
-    Returns
-    -------
-    Dict[str, Optional[str]]
-        The parts of the URL.
-    """
-    matches = DIRTY_URL_REGEX.search(url)
-    if matches is None:
-        return {}
-    return extract_groups(
-        matches,
-        [
-            "dirty_url",
-            "scheme",
-            "authority",
-            "host",
-            "domain",
-            "ipv4",
-            "ipv6",
-            "username",
-            "password",
-            "port",
-            "path",
-            "query",
-            "fragment"
-        ],
-        **kwargs
-    )
+parse_full_url = make_parser(
+    FULL_URL_REGEX, [
+        "full_url",
+        "scheme",
+        "authority",
+        "host",
+        "domain",
+        "ipv4",
+        "ipv6",
+        "username",
+        "password",
+        "port",
+        "path",
+        "query",
+        "fragment"
+    ]
+)
+"""
+Parse a full URL and split it into its constituent parts.
+
+Parameters
+----------
+url: str
+    The full URL.
+
+**kwargs: Any
+    Keyword arguments to be passed to `extract_groups`.
+
+Returns
+-------
+Dict[str, Optional[str]]
+    The parts of the URL.
+"""
+
+
+parse_dirty_url = make_parser(
+    DIRTY_URL_REGEX,
+    [
+        "dirty_url",
+        "scheme",
+        "authority",
+        "host",
+        "domain",
+        "ipv4",
+        "ipv6",
+        "username",
+        "password",
+        "port",
+        "path",
+        "query",
+        "fragment"
+    ]
+)
+"""
+Parse a URL (assuming that it was inputted by a lazy human) and split it
+into its constituent parts.
+
+Parameters
+----------
+url: str
+    The user-inputted URL.
+
+**kwargs: Any
+    Keyword arguments to be passed to `extract_groups`.
+
+Returns
+-------
+Dict[str, Optional[str]]
+    The parts of the URL.
+"""
+
+
+parse_scp_full_loc = make_parser(
+    SCP_FULL_LOC_REGEX,
+    [
+        "scp_full",
+        "authority",
+        "host",
+        "domain",
+        "ipv4",
+        "ipv6",
+        "username",
+        "password",
+        "path"
+    ]
+)
+"""
+Parse a full SCP (secure copy) locator and split it into its constituent parts.
+
+Parameters
+----------
+url: str
+    The full URL.
+
+**kwargs: Any
+    Keyword arguments to be passed to `extract_groups`.
+
+Returns
+-------
+Dict[str, Optional[str]]
+    The parts of the locator.
+"""
+
+
+parse_scp_dirty_loc = make_parser(
+    SCP_DIRTY_LOC_REGEX,
+    [
+        "scp_dirty",
+        "authority",
+        "host",
+        "domain",
+        "ipv4",
+        "ipv6",
+        "username",
+        "password",
+        "path"
+    ]
+)
+"""
+Parse a SCP locator (assuming that it was inputted by a lazy human) and split it
+into its constituent parts.
+
+Parameters
+----------
+url: str
+    The user-inputted URL.
+
+**kwargs: Any
+    Keyword arguments to be passed to `extract_groups`.
+
+Returns
+-------
+Dict[str, Optional[str]]
+    The parts of the locator.
+"""
