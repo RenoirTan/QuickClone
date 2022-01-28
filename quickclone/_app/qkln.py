@@ -87,9 +87,14 @@ def create_argument_parser() -> argparse.ArgumentParser:
 
 
 def ignore_config(keys: t.List[str]) -> t.Set[str]:
+    SHORT_FORMS = {
+        "d": "options.local.remotes_dir",
+        "s": "options.remote.force_scp"
+    }
     ignored = set(keys)
-    if "d" in keys:
-        ignored.add("options.local.remotes_dir")
+    for short, long in SHORT_FORMS.items():
+        if short in keys:
+            ignored.add(long)
     return ignored
 
 
@@ -118,6 +123,13 @@ def normal(args: argparse.Namespace) -> int:
         configs = load_user_config(None if args.config_file is None else Path(args.config_file))
         builder = configs.to_locator_builder()
         built_url = UniformResourceLocator.from_user_and_defaults(dirty, builder)
+        built_url.kwargs["explicit_scp"] = (
+            (
+                configs.from_dotted_string("options.remote.force_scp")
+                and not "options.remote.force_scp" in ignored
+            ) or
+            built_url.kwargs.get("explicit_scp")
+        )
         final_url = remote_to_string(built_url, "git")
         print(f"Final URL: {str(final_url)}")
         dest_path = local_dest_path(
