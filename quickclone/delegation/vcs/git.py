@@ -1,5 +1,3 @@
-import subprocess
-import sys
 import typing as t
 
 from .common import Command
