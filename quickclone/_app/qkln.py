@@ -10,7 +10,7 @@ from quickclone.config.configurator import load_user_config
 from quickclone.delegation.vcs.common import Command
 from quickclone.delegation.vcs.git import GitCloneCommand
 from quickclone.local import local_dest_path
-from quickclone.remote import DirtyLocator, UniformResourceLocator, UrlAuthority
+from quickclone.remote import DirtyLocator, UniformResourceLocator, UrlAuthority, remote_to_string
 
 
 def program():
@@ -110,17 +110,18 @@ def normal(args: argparse.Namespace) -> int:
     try:
         configs = load_user_config()
         builder = configs.to_locator_builder()
-        final_url = UniformResourceLocator.from_user_and_defaults(dirty, builder)
+        built_url = UniformResourceLocator.from_user_and_defaults(dirty, builder)
+        final_url = remote_to_string(built_url, "git")
         print(f"Final URL: {str(final_url)}")
         dest_path = local_dest_path(
             args.dest_path,
             configs.from_dotted_string("options.local.remotes_dir"),
-            final_url.get_host(),
-            final_url.get_path(),
+            built_url.get_host(),
+            built_url.get_path(),
             "options.local.remotes_dir" in ignored
         )
         print(f"Destination path: {dest_path}")
-        git_clone_command = GitCloneCommand(str(final_url), dest_path)
+        git_clone_command = GitCloneCommand(final_url, dest_path)
         print(f"Command> {git_clone_command.format_command_str()}")
         if args.pretend:
             print("pretend flag found! Not executing command.")

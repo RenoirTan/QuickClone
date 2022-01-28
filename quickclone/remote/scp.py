@@ -33,6 +33,9 @@ class ScpLocator(object):
         Comes after the host and separated from it by ':'.
         Examples: RenoirTan/QuickClone
         (in https://github.com/RenoirTan/QuickClone)
+    
+    **kwargs: Any
+        Miscellaneous data.
     """
     
     def __init__(
@@ -47,6 +50,7 @@ class ScpLocator(object):
         self.username = username
         self.password = password
         self.path = path
+        self.kwargs = kwargs
     
     def __str__(self) -> str:
         authority_part = authority_part = str(
@@ -108,5 +112,6 @@ class ScpLocator(object):
             locator.get_host(),
             locator.get_username(),
             locator.get_password(),
-            locator.get_path()
+            locator.get_path(),
+            **locator.kwargs
         )

@@ -1,7 +1,12 @@
 from __future__ import annotations
 import typing as t
 
-from .parser import parse_authority, parse_dirty_url, parse_full_url
+from .parser import (
+    parse_authority,
+    parse_dirty_url,
+    parse_full_url,
+    parse_scp_dirty_loc
+)
 
 __all__ = [
     "BaseLocator",
@@ -120,6 +125,9 @@ class BaseLocator(object):
         The last part of the URL. The fragment section is denoted by '#'.
         Examples: History
         (in https://en.wikipedia.org/wiki/Python_(programming_language)#History)
+    
+    kwargs: Dict[str, Any]
+        Miscellaneous data.
     """
     
     def __init__(
@@ -132,7 +140,7 @@ class BaseLocator(object):
         port: str = "",
         query: str = "",
         fragment: str = "",
-        **kwargs # Easy way to ignore excess keys
+        **kwargs
     ) -> None:
         """
         Initiate an object representing a URL.
@@ -188,6 +196,9 @@ class BaseLocator(object):
             The last part of the URL. The fragment section is denoted by '#'.
             Examples: History
             (in https://en.wikipedia.org/wiki/Python_(programming_language)#History)
+        
+        **kwargs: Any
+            Miscellaneous data.
         """
         self.scheme = scheme
         self.host = host
@@ -197,6 +208,7 @@ class BaseLocator(object):
         self.path = path
         self.query = query
         self.fragment = fragment
+        self.kwargs = kwargs
     
     def __str__(self) -> str:
         scheme_part = f"{self.get_scheme()}://" if self.get_scheme() != "" else ""
@@ -233,6 +245,7 @@ class BaseLocator(object):
         yield "path", self.get_path()
         yield "query", self.get_query()
         yield "fragment", self.get_fragment()
+        yield from self.kwargs.items()
     
     def get_scheme(self) -> str:
         """Get the scheme used to access the remote repository."""
@@ -507,11 +520,14 @@ class DirtyLocator(BaseLocator):
         -------
         UrlAuthority
         """
-        result = parse_dirty_url(dirty_url, none_str="to_str")
+        result: t.Dict[str, str] = parse_dirty_url(dirty_url, none_str="to_str")
+        if result == {}:
+            result = parse_scp_dirty_loc(dirty_url, none_str="to_str")
+            result["scheme"] = "ssh"
+            result["explicit_scp"] = True
         if result == {}:
             raise ValueError(f"Could not match {dirty_url}")
-        fields = {field: result[field] for field in FIELDS}
-        return cls(**fields)
+        return cls(**result)
 
 
 class LocatorBuilder(BaseLocator):

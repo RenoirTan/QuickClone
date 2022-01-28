@@ -198,6 +198,7 @@ AUTHORITY_REGEX: re.Pattern[str] = re.compile(f"^{AUTHORITY_REGEX_RAW}$")
 SCHEME_REGEX_RAW: str = r"(?P<scheme>[a-zA-Z][a-zA-Z0-9+.-]*)"
 PATH_INTERNAL_REGEX_RAW: str = f"(({CHAR}|[@])+(/({CHAR}|[@])+)*)/?|/?"
 PATH_REGEX_RAW: str = r"(?P<path>" + PATH_INTERNAL_REGEX_RAW + r")"
+SCP_PATH_REGEX_RAW: str = r"(?P<path>/?" + PATH_INTERNAL_REGEX_RAW + r")"
 QUERY_REGEX_RAW: str = f"(?P<query>({CHAR}|[/\?])*)"
 FRAGMENT_REGEX_RAW: str = f"(?P<fragment>({CHAR}|[/\?])*)"
 
@@ -224,14 +225,14 @@ DIRTY_URL_REGEX: re.Pattern[str] = re.compile(f"^{DIRTY_URL_REGEX_RAW}$")
 
 SCP_FULL_LOC_REGEX_RAW: str = (
     r"(?P<scp_full>"
-    f"{AUTHORITY_REGEX_RAW}(:{PATH_REGEX_RAW})?"
+    f"{AUTHORITY_REGEX_RAW}(:{SCP_PATH_REGEX_RAW})?"
     r")"
 )
 SCP_FULL_LOC_REGEX: re.Pattern[str] = re.compile(f"^{SCP_FULL_LOC_REGEX_RAW}$")
 
 SCP_DIRTY_LOC_REGEX_RAW: str = (
     r"(?P<scp_dirty>"
-    f"({AUTHORITY_REGEX_RAW})?(:{PATH_REGEX_RAW})?"
+    f"({AUTHORITY_REGEX_RAW})?(:{SCP_PATH_REGEX_RAW})?"
     r")"
 )
 SCP_DIRTY_LOC_REGEX: re.Pattern[str] = re.compile(f"^{SCP_DIRTY_LOC_REGEX_RAW}$")
