@@ -1,1 +1,1 @@
-from . import common, git
+from . import common, git, mercurial
