@@ -370,6 +370,22 @@ class UniformResourceLocator(BaseLocator):
             `True` if this URL has no errors in it and `False` otherwise.
         """
         return sum(map(lambda _: 1, self.find_faults())) == 0
+
+    def detect_explicitness(self, force_scp: bool, ignore_force_scp: bool) -> None:
+        """
+        Detect whether this locator was explicitly written as an SCP locator
+        and set the `self.kwargs["explicit_scp"]` value to `True`.
+        
+        Parameters
+        ----------
+        configs: SmartConfigurator
+            The user's configuration.
+        
+        ignore_force_scp:
+            Whether to ignore the `options.remote.force_scp` configuration.
+        """
+        if force_scp and not ignore_force_scp:
+            self.kwargs["explicit_scp"] = True
     
     @classmethod
     def process_url(cls, url: str) -> UniformResourceLocator:

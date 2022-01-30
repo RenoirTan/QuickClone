@@ -7,10 +7,9 @@ import sys
 from quickclone import DESCRIPTION, NAME, VERSION
 from quickclone.config.common import DEFAULTS_FOLDER
 from quickclone.config.configurator import load_user_config
+from quickclone.delegation.tasks import create_clone_command
 from quickclone.delegation.vcs.common import Command
-from quickclone.delegation.vcs.git import GitCloneCommand
-from quickclone.local import local_dest_path
-from quickclone.remote import DirtyLocator, UniformResourceLocator, UrlAuthority, remote_to_string
+from quickclone.remote import DirtyLocator, UniformResourceLocator, UrlAuthority
 
 
 def program():
@@ -130,29 +129,21 @@ def normal(args: argparse.Namespace) -> int:
         configs = load_user_config(None if args.config_file is None else Path(args.config_file))
         builder = configs.to_locator_builder()
         built_url = UniformResourceLocator.from_user_and_defaults(dirty, builder)
-        built_url.kwargs["explicit_scp"] = (
-            (
-                configs.from_dotted_string("options.remote.force_scp")
-                and not "options.remote.force_scp" in ignored
-            ) or
-            built_url.kwargs.get("explicit_scp")
-        )
-        final_url = remote_to_string(built_url, "git")
-        print(f"Final URL: {str(final_url)}")
-        dest_path = local_dest_path(
+        vcs = configs.from_dotted_string("vcs.command")
+        clone_command = create_clone_command(
+            vcs,
+            configs,
+            built_url,
             args.dest_path,
-            configs.from_dotted_string("options.local.remotes_dir"),
-            built_url.get_host(),
-            built_url.get_path(),
-            "options.local.remotes_dir" in ignored
+            [],
+            {},
+            ignored
         )
-        print(f"Destination path: {dest_path}")
-        git_clone_command = GitCloneCommand(final_url, dest_path)
-        print(f"Command> {git_clone_command.format_command_str()}")
+        print(f"Command> {clone_command.format_command_str()}")
         if args.pretend:
             print("pretend flag found! Not executing command.")
         else:
-            run_command(git_clone_command)
+            run_command(clone_command)
     except Exception as e:
         raise e
         print(f"Error occurred:\n{e}")
