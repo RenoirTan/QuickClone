@@ -56,6 +56,12 @@ def create_argument_parser() -> argparse.ArgumentParser:
         )
     )
     app.add_argument(
+        "--system",
+        "-S",
+        dest="vcs",
+        help="which version control system to use: git, mercurial/hg"
+    )
+    app.add_argument(
         "--config-file",
         "-C",
         dest="config_file",
@@ -130,6 +136,8 @@ def normal(args: argparse.Namespace) -> int:
         builder = configs.to_locator_builder()
         built_url = UniformResourceLocator.from_user_and_defaults(dirty, builder)
         vcs = configs.from_dotted_string("vcs.command")
+        if args.vcs is not None:
+            vcs = args.vcs
         clone_command = create_clone_command(
             vcs,
             configs,
