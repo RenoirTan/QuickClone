@@ -7,7 +7,7 @@ REMOTE = "https://github.com/RenoirTan/QuickClone/.git"
 DEST_PATH = "/tmp/somewhere"
 
 
-def test_gitclonecommand_1():
+def test_gitclonecommand():
     git_where = shutil.which("git")
     if git_where is None:
         return
@@ -15,7 +15,7 @@ def test_gitclonecommand_1():
     assert gcc.format_command_list() == [git_where, "clone", REMOTE, DEST_PATH]
 
 
-def test_gitclonecommand_2():
+def test_gitclonecommand_nodestpath():
     git_where = shutil.which("git")
     if git_where is None:
         return
