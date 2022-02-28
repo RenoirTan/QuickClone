@@ -1,5 +1,12 @@
 # QuickClone Changelog
 
+## Version 0.3.0
+
+1. Add support for mercurial.
+2. Allow overriding the `vcs.remote` configuration option using the
+`-S/--system` flag. Currently, this flag accepts `git`, `mercurial` or `hg`.
+3. 
+
 ## Version 0.2.0
 
 1. Add support for SCP-like locators (e.g. git@github.com:RenoirTan/QuickClone.git)
