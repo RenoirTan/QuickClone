@@ -5,6 +5,13 @@ import subprocess
 import sys
 
 from quickclone import DESCRIPTION, NAME, VERSION
+from quickclone.config.cache import (
+    load_caches,
+    dump_caches,
+    get_cache_value,
+    set_cache_value,
+    AVAILABLE_CACHES
+)
 from quickclone.config.common import DEFAULTS_FOLDER
 from quickclone.config.configurator import load_user_config
 from quickclone.delegation.tasks import create_clone_command
@@ -42,6 +49,15 @@ def create_argument_parser() -> argparse.ArgumentParser:
         type=str,
         default="",
         help="the directory where the remote repository should be cloned to"
+    )
+    app.add_argument(
+        "--last-clone",
+        "-L",
+        dest="get_last_clone",
+        action="store_const",
+        const=True,
+        default=False,
+        help="get the directory of where the last repo was cloned to"
     )
     app.add_argument(
         "--pretend",
@@ -111,17 +127,25 @@ def ignore_config(keys: t.List[str]) -> t.Set[str]:
 
 
 def main(argv: t.List[str]) -> int:
+    load_caches(AVAILABLE_CACHES)
     app = create_argument_parser()
     args = app.parse_args(argv[1:])
     if args.show_version:
         print(f"{NAME} v{VERSION}")
         return 0
+    elif args.get_last_clone:
+        last_clone: t.Optional[str] = get_cache_value("last_clone")
+        if last_clone is not None and last_clone != "":
+            print(last_clone)
+        return 0
     if len(args.tests) > 0:
         successes, test_count = conduct_tests(args.tests, args.remote_url)
         if successes < test_count:
             print("Not all tests succeeded")
+            dump_caches(AVAILABLE_CACHES)
             return 1
         else:
+            dump_caches(AVAILABLE_CACHES)
             return 0
     else:
         return normal(args)
@@ -153,16 +177,19 @@ def normal(args: argparse.Namespace) -> int:
         else:
             run_command(clone_command)
     except Exception as e:
+        dump_caches(AVAILABLE_CACHES)
         raise e
         print(f"Error occurred:\n{e}")
         return 1
     else:
+        dump_caches(AVAILABLE_CACHES)
         return 0
 
 
 def run_command(command: Command) -> subprocess.CompletedProcess:
     result = command.run()
     if isinstance(result, subprocess.CompletedProcess):
+        set_cache_value("last_clone", command.dest_path)
         return result
     elif isinstance(result, subprocess.SubprocessError):
         raise result

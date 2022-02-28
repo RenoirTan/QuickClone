@@ -1,5 +1,9 @@
 # QuickClone Changelog
 
+## Version 0.4.0
+
+1. Add `-L/--last-clone` flag to get the directory of the last clone operation.
+
 ## Version 0.3.0
 
 1. Add support for mercurial.

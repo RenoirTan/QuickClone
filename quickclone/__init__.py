@@ -1,6 +1,6 @@
 from . import config, delegation, remote
 
-VERSION: str = "0.3.0"
+VERSION: str = "0.4.0"
 """
 Current version of QuickClone
 """
