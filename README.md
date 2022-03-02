@@ -57,3 +57,17 @@ qkln RenoirTan/QuickClone -Id
 
 In the latter example, QuickClone will ignore `options.local.remotes_dir` and
 clone to `./QuickClone`.
+
+After cloning the remote repository, QuickClone will save where the repository
+was cloned to locally in a cache file. You can then use this command to see
+where the last repository was cloned to:
+
+```shell
+qkln -L
+```
+
+and then cd into that directory:
+
+```shell
+cd $(qkln -L)
+```
