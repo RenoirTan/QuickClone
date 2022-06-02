@@ -1,4 +1,4 @@
-from . import config, delegation, remote
+from . import compatibility, config, delegation, remote
 
 VERSION: str = "0.4.1"
 """

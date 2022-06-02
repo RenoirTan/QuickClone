@@ -5,6 +5,7 @@ import subprocess
 import sys
 
 from quickclone import DESCRIPTION, NAME, VERSION
+from quickclone.compatibility import v0_4_0
 from quickclone.config.cache import (
     load_caches,
     dump_caches,
@@ -126,7 +127,14 @@ def ignore_config(keys: t.List[str]) -> t.Set[str]:
     return ignored
 
 
+def do_compatibility():
+    compat_status = v0_4_0.quickclone_cache_move()
+    if compat_status == 1:
+        print("Cancelled move/copy!")
+
+
 def main(argv: t.List[str]) -> int:
+    do_compatibility()
     load_caches(AVAILABLE_CACHES)
     app = create_argument_parser()
     args = app.parse_args(argv[1:])
