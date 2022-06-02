@@ -97,7 +97,7 @@ def get_cache_value(desired: str) -> t.Optional[t.Any]:
     if desired == "last_clone":
         return _HISTORY_CACHE.get("last_clone")
     else:
-        raise ValueError(f"Invalid {desired=}")
+        raise ValueError(f"Invalid desired={desired}")
 
 def set_cache_value(desired: str, value: t.Optional[t.Any] = None) -> None:
     """
@@ -109,4 +109,4 @@ def set_cache_value(desired: str, value: t.Optional[t.Any] = None) -> None:
         else:
             raise TypeError("Invalid type for last_clone")
     else:
-        raise ValueError(f"Invalid {desired=}")
+        raise ValueError(f"Invalid desired={desired}")

@@ -40,7 +40,8 @@ class BaseCommand(object):
         str
             This command's command-line arguments as a single string.
         """
-        return shlex.join(self.format_command_list())
+        return " ".join(map(shlex.quote, self.format_command_list()))
+        # return shlex.join(self.format_command_list()) # >= 3.8
     
     def run(self) -> t.Union[subprocess.CompletedProcess, subprocess.SubprocessError]:
         """
