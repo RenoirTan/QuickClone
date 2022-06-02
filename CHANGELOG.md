@@ -2,9 +2,9 @@
 
 ## Version 0.4.1
 
-1. Fix syntax to be 3.7-compliant. (DONE)
+1. Fix syntax to be 3.7-compliant.
 2. Move cache location from `~/.cache/quicktoml` to `~/.cache/quickclone`,
-with prompt to user asking whether they want to move the old cache data over. (DONE)
+with prompt to user asking whether they want to move the old cache data over.
 
 ## Version 0.4.0
 

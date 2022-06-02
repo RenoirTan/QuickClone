@@ -46,8 +46,8 @@ def quickclone_cache_move() -> int:
         return
     print("⚠⚠⚠ WARNING ⚠⚠⚠")
     print(
-        f"QuickClone detected '{USER_CACHE_FOLDER_OLD}' which was the old location "
-        f"for QuickClone's cache. The new cache location is at '{USER_CACHE_FOLDER}'.",
+        f"I made a mistake when writing the path of the cache folder, it was supposed to be at "
+        f"'{USER_CACHE_FOLDER}' but instead I wrote '{USER_CACHE_FOLDER_OLD}'.",
         end="\n\n"
     )
     print(
