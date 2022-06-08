@@ -154,67 +154,51 @@ def main(argv: t.List[str]) -> int:
             return 1
         else:
             return 0
-    result = normal(args)
-    if result is not None:
-        exception, status = result
-    else:
-        exception = None
-        status = 0
-    if status == 1:
-        raise exception
-    else:
-        return status
+    try:
+        result = normal(args)
+    except Exception as e:
+        raise e
+    finally:
+        dump_caches(AVAILABLE_CACHES)
+    return result
 
 
 # Call this function if quickclone is run with the normal set of clargs.
-def normal(args: argparse.Namespace) -> t.Optional[t.Tuple[Exception, int]]:
+def normal(args: argparse.Namespace) -> int:
     dirty = DirtyLocator.process_dirty_url(args.remote_url)
     ignored = ignore_config(args.ignore)
-    exception: t.Optional[Exception] = None
-    status = 0
+    if args.config_file is None:
+        init_user_config_file()
     try:
-        if args.config_file is None:
-            init_user_config_file()
-        try:
-            configs = load_user_config(None if args.config_file is None else Path(args.config_file))
-        except UnicodeDecodeError as ude:
-            print(
-                f"Detect non-UTF-8 encoding in '{USER_CONFIG_FILE}'. "
-                f"Please make sure that the encoding for '{USER_CONFIG_FILE}' is UTF-8. "
-                f"This is especially important for Windows users where the default encoding "
-                f"is UTF-16."
-            )
-            status = 2
-            raise ude
-        builder = configs.to_locator_builder()
-        built_url = UniformResourceLocator.from_user_and_defaults(dirty, builder)
-        vcs = configs.from_dotted_string("vcs.command")
-        if args.vcs is not None:
-            vcs = args.vcs
-        clone_command = create_clone_command(
-            vcs,
-            configs,
-            built_url,
-            args.dest_path,
-            [],
-            {},
-            ignored
+        configs = load_user_config(None if args.config_file is None else Path(args.config_file))
+    except UnicodeDecodeError as ude:
+        print(
+            f"Detected non-UTF-8 encoding in '{USER_CONFIG_FILE}'! "
+            f"Please make sure that the encoding for '{USER_CONFIG_FILE}' is UTF-8. "
+            f"This is especially important for Windows users where the default encoding "
+            f"is UTF-16."
         )
-        print(f"Command> {clone_command.format_command_str()}")
-        if args.pretend:
-            print("pretend flag found! Not executing command.")
-        else:
-            run_command(clone_command)
-    except Exception as e:
-        exception = e
-        if status == 0:
-            status = 1
-    finally:
-        dump_caches(AVAILABLE_CACHES)
-        if exception is not None:
-            return exception, status
-        else:
-            return None
+        return 2
+    builder = configs.to_locator_builder()
+    built_url = UniformResourceLocator.from_user_and_defaults(dirty, builder)
+    vcs = configs.from_dotted_string("vcs.command")
+    if args.vcs is not None:
+        vcs = args.vcs
+    clone_command = create_clone_command(
+        vcs,
+        configs,
+        built_url,
+        args.dest_path,
+        [],
+        {},
+        ignored
+    )
+    print(f"Command> {clone_command.format_command_str()}")
+    if args.pretend:
+        print("pretend flag found! Not executing command.")
+        return 0
+    else:
+        return run_command(clone_command).returncode
 
 
 def run_command(command: Command) -> subprocess.CompletedProcess:
