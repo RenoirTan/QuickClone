@@ -25,7 +25,21 @@ def program():
 
 
 def create_argument_parser() -> argparse.ArgumentParser:
-    app = argparse.ArgumentParser(description=f"{NAME} v{VERSION}: {DESCRIPTION}")
+    app = argparse.ArgumentParser(
+        prog="python3 -m quickclone",
+        description=f"{NAME} v{VERSION}: {DESCRIPTION}",
+        usage="%(prog)s [OPTION...] [REMOTE_URL] [DEST_PATH] [-- VCS_ARGS...]",
+        epilog="""
+You can pass additional command line arguments to the version control system by
+adding them after '--'. For example, if you only want to clone the last commit
+in a large repository like CPython (from https://github.com/python/cpython), you'd pass '--depth 1' after the
+git clone subcommand:
+
+```
+    $ qkln python/cpython -- --depth 1
+```
+"""
+    )
     app.add_argument(
         "--version",
         "-v",
@@ -115,6 +129,20 @@ def create_argument_parser() -> argparse.ArgumentParser:
     return app
 
 
+def process_args(parser: argparse.ArgumentParser, argv: t.List[str]) -> argparse.Namespace:
+    try:
+        vcsa_index = argv.index("--")
+    except:
+        vcsa_index = -1
+    if vcsa_index == -1:
+        namespace = parser.parse_args(argv)
+        namespace.vcs_args = []
+    else:
+        namespace = parser.parse_args(argv[:vcsa_index])
+        namespace.vcs_args = argv[vcsa_index+1:].copy()
+    return namespace
+
+
 def ignore_config(keys: t.List[str]) -> t.Set[str]:
     SHORT_FORMS = {
         "d": "options.local.remotes_dir",
@@ -137,7 +165,7 @@ def main(argv: t.List[str]) -> int:
     do_compatibility()
     load_caches(AVAILABLE_CACHES)
     app = create_argument_parser()
-    args = app.parse_args(argv[1:])
+    args = process_args(app, argv[1:])
     if args.show_version:
         print(f"{NAME} v{VERSION}")
         return 0
@@ -189,7 +217,7 @@ def normal(args: argparse.Namespace) -> int:
         configs,
         built_url,
         args.dest_path,
-        [],
+        args.vcs_args,
         {},
         ignored
     )
