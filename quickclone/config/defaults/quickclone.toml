@@ -1,14 +1,32 @@
+# Settings for version control systems
 [vcs]
-command = "git"
+command = "git" # Default version control system. Allowed: git, hg, mercurial
 
 [options]
 
+# Settings for remote repositories
 [options.remote]
-force_scp = false
-scheme = "https"
-host = "github.com"
-base_path = ""
+
+force_scp = false # If true, force all SSH urls to be converted into the SCP format
+
+scheme = "https" # Default url scheme
+
+host = "github.com" # Default website to clone from
+
+base_path = "" # Currently unused
+
+# Default path. If this is set to something like 'RenoirTan/QuickClone.git',
+# the default url may be 'https://github.com/RenoirTan/QuickClone.git'
 path = ""
 
+# Settings for repositories that are cloned to disk
 [options.local]
+
+# Directory to store your remote repositories.
+# If this option is set to '~/Code' and you cloned 'https://github.com/RenoirTan/QuickClone.git',
+# the repository will be cloned to:
+#  1. 'C:\Users\username\Code\github.com\RenoirTan\QuickClone' on Windows
+#  2. '/Users/username/Code/github.com/RenoirTan/QuickClone' on MacOS
+#  3. '/home/username/Code/github.com/RenoirTan/QuickClone' on Linux
+#  4. etc
 remotes_dir = ""

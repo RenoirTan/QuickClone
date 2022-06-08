@@ -11,7 +11,7 @@ Path to the incorrectly named cache folder: `~/.cache/quicktoml`
 
 def quickclone_cache_move() -> int:
     """
-    Fix for v4.0 or below.
+    Fix for v0.4.0 or below.
     
     Prompt user to move or copy cache from `~/.cache/quicktoml` to
     `~/.cache/quickclone`, then perform an operation based on the user's choice.

@@ -13,8 +13,8 @@ from quickclone.config.cache import (
     set_cache_value,
     AVAILABLE_CACHES
 )
-from quickclone.config.common import DEFAULTS_FOLDER
-from quickclone.config.configurator import load_user_config
+from quickclone.config.common import DEFAULTS_FOLDER, USER_CONFIG_FILE
+from quickclone.config.configurator import load_user_config, init_user_config_file
 from quickclone.delegation.tasks import create_clone_command
 from quickclone.delegation.vcs.common import Command
 from quickclone.remote import DirtyLocator, UniformResourceLocator, UrlAuthority
@@ -25,7 +25,21 @@ def program():
 
 
 def create_argument_parser() -> argparse.ArgumentParser:
-    app = argparse.ArgumentParser(description=f"{NAME} v{VERSION}: {DESCRIPTION}")
+    app = argparse.ArgumentParser(
+        prog="python3 -m quickclone",
+        description=f"{NAME} v{VERSION}: {DESCRIPTION}",
+        usage="%(prog)s [OPTION...] [REMOTE_URL] [DEST_PATH] [-- VCS_ARGS...]",
+        epilog="""
+You can pass additional command line arguments to the version control system by
+adding them after '--'. For example, if you only want to clone the last commit
+in a large repository like CPython (from https://github.com/python/cpython), you'd pass '--depth 1' after the
+git clone subcommand:
+
+```
+    $ qkln python/cpython -- --depth 1
+```
+"""
+    )
     app.add_argument(
         "--version",
         "-v",
@@ -115,6 +129,20 @@ def create_argument_parser() -> argparse.ArgumentParser:
     return app
 
 
+def process_args(parser: argparse.ArgumentParser, argv: t.List[str]) -> argparse.Namespace:
+    try:
+        vcsa_index = argv.index("--")
+    except:
+        vcsa_index = -1
+    if vcsa_index == -1:
+        namespace = parser.parse_args(argv)
+        namespace.vcs_args = []
+    else:
+        namespace = parser.parse_args(argv[:vcsa_index])
+        namespace.vcs_args = argv[vcsa_index+1:].copy()
+    return namespace
+
+
 def ignore_config(keys: t.List[str]) -> t.Set[str]:
     SHORT_FORMS = {
         "d": "options.local.remotes_dir",
@@ -137,7 +165,7 @@ def main(argv: t.List[str]) -> int:
     do_compatibility()
     load_caches(AVAILABLE_CACHES)
     app = create_argument_parser()
-    args = app.parse_args(argv[1:])
+    args = process_args(app, argv[1:])
     if args.show_version:
         print(f"{NAME} v{VERSION}")
         return 0
@@ -148,50 +176,57 @@ def main(argv: t.List[str]) -> int:
         return 0
     if len(args.tests) > 0:
         successes, test_count = conduct_tests(args.tests, args.remote_url)
+        dump_caches(AVAILABLE_CACHES)
         if successes < test_count:
             print("Not all tests succeeded")
-            dump_caches(AVAILABLE_CACHES)
             return 1
         else:
-            dump_caches(AVAILABLE_CACHES)
             return 0
-    else:
-        return normal(args)
+    try:
+        result = normal(args)
+    except Exception as e:
+        raise e
+    finally:
+        dump_caches(AVAILABLE_CACHES)
+    return result
 
 
 # Call this function if quickclone is run with the normal set of clargs.
 def normal(args: argparse.Namespace) -> int:
     dirty = DirtyLocator.process_dirty_url(args.remote_url)
     ignored = ignore_config(args.ignore)
+    if args.config_file is None:
+        init_user_config_file()
     try:
         configs = load_user_config(None if args.config_file is None else Path(args.config_file))
-        builder = configs.to_locator_builder()
-        built_url = UniformResourceLocator.from_user_and_defaults(dirty, builder)
-        vcs = configs.from_dotted_string("vcs.command")
-        if args.vcs is not None:
-            vcs = args.vcs
-        clone_command = create_clone_command(
-            vcs,
-            configs,
-            built_url,
-            args.dest_path,
-            [],
-            {},
-            ignored
+    except UnicodeDecodeError as ude:
+        print(
+            f"Detected non-UTF-8 encoding in '{USER_CONFIG_FILE}'! "
+            f"Please make sure that the encoding for '{USER_CONFIG_FILE}' is UTF-8. "
+            f"This is especially important for Windows users where the default encoding "
+            f"is UTF-16."
         )
-        print(f"Command> {clone_command.format_command_str()}")
-        if args.pretend:
-            print("pretend flag found! Not executing command.")
-        else:
-            run_command(clone_command)
-    except Exception as e:
-        dump_caches(AVAILABLE_CACHES)
-        raise e
-        print(f"Error occurred:\n{e}")
-        return 1
-    else:
-        dump_caches(AVAILABLE_CACHES)
+        return 2
+    builder = configs.to_locator_builder()
+    built_url = UniformResourceLocator.from_user_and_defaults(dirty, builder)
+    vcs = configs.from_dotted_string("vcs.command")
+    if args.vcs is not None:
+        vcs = args.vcs
+    clone_command = create_clone_command(
+        vcs,
+        configs,
+        built_url,
+        args.dest_path,
+        args.vcs_args,
+        {},
+        ignored
+    )
+    print(f"Command> {clone_command.format_command_str()}")
+    if args.pretend:
+        print("pretend flag found! Not executing command.")
         return 0
+    else:
+        return run_command(clone_command).returncode
 
 
 def run_command(command: Command) -> subprocess.CompletedProcess:
