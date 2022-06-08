@@ -1,5 +1,12 @@
 # QuickClone Changelog
 
+## Version 0.5.0
+
+1. Detect missing configuration files and give user the option to create the
+missing configuration files. (DONE)
+2. Warn about configuration file encoding bugs. (DONE)
+3. Pass extra command-line arguments to VCS command.
+
 ## Version 0.4.1
 
 1. Fix syntax to be 3.7-compliant.

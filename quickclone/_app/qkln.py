@@ -13,8 +13,8 @@ from quickclone.config.cache import (
     set_cache_value,
     AVAILABLE_CACHES
 )
-from quickclone.config.common import DEFAULTS_FOLDER
-from quickclone.config.configurator import load_user_config
+from quickclone.config.common import DEFAULTS_FOLDER, USER_CONFIG_FILE
+from quickclone.config.configurator import load_user_config, init_user_config_file
 from quickclone.delegation.tasks import create_clone_command
 from quickclone.delegation.vcs.common import Command
 from quickclone.remote import DirtyLocator, UniformResourceLocator, UrlAuthority
@@ -148,23 +148,44 @@ def main(argv: t.List[str]) -> int:
         return 0
     if len(args.tests) > 0:
         successes, test_count = conduct_tests(args.tests, args.remote_url)
+        dump_caches(AVAILABLE_CACHES)
         if successes < test_count:
             print("Not all tests succeeded")
-            dump_caches(AVAILABLE_CACHES)
             return 1
         else:
-            dump_caches(AVAILABLE_CACHES)
             return 0
+    result = normal(args)
+    if result is not None:
+        exception, status = result
     else:
-        return normal(args)
+        exception = None
+        status = 0
+    if status == 1:
+        raise exception
+    else:
+        return status
 
 
 # Call this function if quickclone is run with the normal set of clargs.
-def normal(args: argparse.Namespace) -> int:
+def normal(args: argparse.Namespace) -> t.Optional[t.Tuple[Exception, int]]:
     dirty = DirtyLocator.process_dirty_url(args.remote_url)
     ignored = ignore_config(args.ignore)
+    exception: t.Optional[Exception] = None
+    status = 0
     try:
-        configs = load_user_config(None if args.config_file is None else Path(args.config_file))
+        if args.config_file is None:
+            init_user_config_file()
+        try:
+            configs = load_user_config(None if args.config_file is None else Path(args.config_file))
+        except UnicodeDecodeError as ude:
+            print(
+                f"Detect non-UTF-8 encoding in '{USER_CONFIG_FILE}'. "
+                f"Please make sure that the encoding for '{USER_CONFIG_FILE}' is UTF-8. "
+                f"This is especially important for Windows users where the default encoding "
+                f"is UTF-16."
+            )
+            status = 2
+            raise ude
         builder = configs.to_locator_builder()
         built_url = UniformResourceLocator.from_user_and_defaults(dirty, builder)
         vcs = configs.from_dotted_string("vcs.command")
@@ -185,13 +206,15 @@ def normal(args: argparse.Namespace) -> int:
         else:
             run_command(clone_command)
     except Exception as e:
+        exception = e
+        if status == 0:
+            status = 1
+    finally:
         dump_caches(AVAILABLE_CACHES)
-        raise e
-        print(f"Error occurred:\n{e}")
-        return 1
-    else:
-        dump_caches(AVAILABLE_CACHES)
-        return 0
+        if exception is not None:
+            return exception, status
+        else:
+            return None
 
 
 def run_command(command: Command) -> subprocess.CompletedProcess:

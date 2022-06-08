@@ -1,5 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
+import shutil
 import typing as t
 from urllib.parse import urlencode
 
@@ -81,8 +82,49 @@ class Configurator(object):
             fragment=fragment
         )
     
+    def to_string(self, *args, **kwargs) -> str:
+        """
+        Dump the configuration into a string.
+        
+        Parameters
+        ----------
+        *args
+            Extra arguments to be passed into toml.dumps().
+        
+        **kwargs
+            Extra arguments to be passed into toml.dumps().
+            
+        Returns
+        -------
+        str
+            Configuration as a string.
+        """
+        return toml.dumps(self.configuration, *args, **kwargs)
+
+    def to_file(self, path: Path, *args, **kwargs) -> None:
+        """
+        Save the configuration to a file.
+        
+        Parameters
+        ----------
+        path: Path
+            Path to the configuration file.
+        
+        *args
+            Extra arguments to be passed into toml.dump().
+        
+        **kwargs
+            Extra arguments to be passed into toml.dump().
+        
+        Returns
+        -------
+        None
+        """
+        with path.open("w") as f:
+            toml.dump(self.configuration, f, *args, **kwargs)
+    
     @classmethod
-    def from_file(cls, path: Path) -> Configurator:
+    def from_file(cls, path: Path, *args, **kwargs) -> Configurator:
         """
         Load the configuration from a file.
         
@@ -91,17 +133,27 @@ class Configurator(object):
         path: Path
             Path to the configuration file.
         
+        *args
+            Extra arguments to be passed into toml.load().
+        
+        **kwargs
+            Extra arguments to be passed into toml.load().
+        
         Returns
         -------
         Configurator
             The configuration loaded from the file stored as a `Configurator`
             object.
         """
-        configuration = toml.load(path)
+        configuration = toml.load(path, *args, **kwargs)
         return cls(configuration)
 
+DEFAULT_CONFIG_FILE: Path = DEFAULTS_FOLDER / "quickclone.toml"
+"""
+Path to default configs.
+"""
 
-DEFAULT_CONFIGURATION = Configurator.from_file(DEFAULTS_FOLDER / "quickclone.toml")
+DEFAULT_CONFIGURATION = Configurator.from_file(DEFAULT_CONFIG_FILE)
 """
 An object storing the default configs for QuickClone.
 """
@@ -144,3 +196,39 @@ def load_user_config(path: t.Optional[Path] = None) -> SmartConfigurator:
         return SmartConfigurator.from_file(path)
     else:
         return SmartConfigurator({})
+
+
+def init_user_config_file() -> int:
+    """
+    Create '~/.config/quickclone.toml' if it does not exist.
+    
+    Returns
+    -------
+    status: int
+        The status code indicates what operation was performed.
+        0: '~/.config/quickclone.toml` detected, nothing has to be done.
+        1: User doesn't want to create '~/.config/quickclone.toml'.
+        2: '~/.config/quickclone.toml' created.
+    """
+    if USER_CONFIG_FILE.exists():
+        return 0
+    print(
+        f"QuickClone couldn't find '{USER_CONFIG_FILE}'. "
+        f"Do you want to create it now?"
+    )
+    answer = ""
+    while True:
+        answer = input("[Y/n] ==> ")
+        if answer.lower() in {"y", "n", ""}:
+            answer = answer.lower()
+            break
+        else:
+            print(f"Invalid answer: {answer}")
+    if answer == "y":
+        print(f"Copying '{DEFAULT_CONFIG_FILE}' to '{USER_CONFIG_FILE}'...")
+        shutil.copy2(DEFAULT_CONFIG_FILE, USER_CONFIG_FILE)
+        print("Done!")
+        return 2
+    else:
+        print(f"Not creating '{USER_CONFIG_FILE}'!")
+        return 1
