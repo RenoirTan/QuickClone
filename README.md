@@ -71,3 +71,18 @@ and then cd into that directory:
 ```shell
 cd $(qkln -L)
 ```
+
+As of version 0.6, QuickClone stores a history of previously cloned repositories
+instead of just one. You can specify which repository's path to print by
+specifying its index in QuickClone's history:
+
+```shell
+cd $(qkln -LZ 1) # to clone the second item
+```
+
+If the `--last-clones-index/-Z` flag is set to `-1`, then the list of previously
+stored repositories is printed.
+
+```shell
+qkln -LZ -1
+```
