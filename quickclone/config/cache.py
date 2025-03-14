@@ -94,8 +94,8 @@ def get_cache_value(desired: str) -> t.Optional[t.Any]:
     """
     Get cache value of desired key.
     """
-    if desired == "last_clone":
-        return _HISTORY_CACHE.get("last_clone")
+    if desired == "last_clones":
+        return _HISTORY_CACHE.get("last_clones", [])
     else:
         raise ValueError(f"Invalid desired={desired}")
 
@@ -103,10 +103,10 @@ def set_cache_value(desired: str, value: t.Optional[t.Any] = None) -> None:
     """
     Set cache value of desired key.
     """
-    if desired == "last_clone":
-        if isinstance(value, str) or isinstance(value, Path):
-            _HISTORY_CACHE["last_clone"] = str(value)
+    if desired == "last_clones":
+        if isinstance(value, list):
+            _HISTORY_CACHE["last_clones"] = value
         else:
-            raise TypeError("Invalid type for last_clone")
+            raise TypeError("Invalid type for last_clones")
     else:
         raise ValueError(f"Invalid desired={desired}")

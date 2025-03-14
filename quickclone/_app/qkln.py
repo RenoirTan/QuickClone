@@ -5,7 +5,7 @@ import subprocess
 import sys
 
 from quickclone import DESCRIPTION, NAME, VERSION
-from quickclone.compatibility import v0_4_0
+from quickclone.compatibility import v0_4_0, v0_6_0
 from quickclone.config.cache import (
     load_caches,
     dump_caches,
@@ -72,7 +72,18 @@ git clone subcommand:
         action="store_const",
         const=True,
         default=False,
-        help="get the directory of where the last repo was cloned to"
+        help="print the path to previously cloned repositories"
+    )
+    app.add_argument(
+        "--last-clones-index",
+        "-Z",
+        dest="last_clones_index",
+        action="store",
+        default=0,
+        type=int,
+        help="the index of the path of the previously cloned repository, starting from 0 \
+for the most recently cloned repository. If this value is set to -1, print all paths \
+to previously cloned repositories"
     )
     app.add_argument(
         "--pretend",
@@ -158,7 +169,8 @@ def ignore_config(keys: t.List[str]) -> t.Set[str]:
 def do_compatibility():
     compat_status = v0_4_0.quickclone_cache_move()
     if compat_status == 1:
-        print("Cancelled move/copy!")
+        print("Compatibility (v0.4.0) |> Cancelled move/copy!")
+    compat_status = v0_6_0.quickclone_history_list()
 
 
 def main(argv: t.List[str]) -> int:
@@ -170,10 +182,18 @@ def main(argv: t.List[str]) -> int:
         print(f"{NAME} v{VERSION}")
         return 0
     elif args.get_last_clone:
-        last_clone: t.Optional[str] = get_cache_value("last_clone")
-        if last_clone is not None and last_clone != "":
-            print(last_clone)
-        return 0
+        last_clones_index = args.last_clones_index
+        last_clones: t.Optional[t.List[str]] = get_cache_value("last_clones")
+        if last_clones_index == -1:
+            print("Previous repositories:")
+            for i, p in enumerate(last_clones):
+                print(f"  [{i}] {p}")
+            return 0
+        if last_clones is not None and 0 <= last_clones_index < len(last_clones):
+            print(last_clones[last_clones_index])
+            return 0
+        else:
+            raise ValueError(f"invalid --last-clones-index/-Z: {last_clones_index}")
     if len(args.tests) > 0:
         successes, test_count = conduct_tests(args.tests, args.remote_url)
         dump_caches(AVAILABLE_CACHES)
@@ -232,7 +252,9 @@ def normal(args: argparse.Namespace) -> int:
 def run_command(command: Command) -> subprocess.CompletedProcess:
     result = command.run()
     if isinstance(result, subprocess.CompletedProcess):
-        set_cache_value("last_clone", command.dest_path)
+        last_clones: t.List[str] = get_cache_value("last_clones")
+        last_clones.insert(0, command.dest_path)
+        set_cache_value("last_clones", last_clones)
         return result
     elif isinstance(result, subprocess.SubprocessError):
         raise result

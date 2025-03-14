@@ -199,13 +199,13 @@ SCHEME_REGEX_RAW: str = r"(?P<scheme>[a-zA-Z][a-zA-Z0-9+.-]*)"
 PATH_INTERNAL_REGEX_RAW: str = f"(({CHAR}|[@])+(/({CHAR}|[@])+)*)/?|/?"
 PATH_REGEX_RAW: str = r"(?P<path>" + PATH_INTERNAL_REGEX_RAW + r")"
 SCP_PATH_REGEX_RAW: str = r"(?P<path>/?" + PATH_INTERNAL_REGEX_RAW + r")"
-QUERY_REGEX_RAW: str = f"(?P<query>({CHAR}|[/\?])*)"
-FRAGMENT_REGEX_RAW: str = f"(?P<fragment>({CHAR}|[/\?])*)"
+QUERY_REGEX_RAW: str = f"(?P<query>({CHAR}|[/\\?])*)"
+FRAGMENT_REGEX_RAW: str = f"(?P<fragment>({CHAR}|[/\\?])*)"
 
 
 FULL_URL_REGEX_RAW: str = (
     r"(?P<full_url>"
-    f"{SCHEME_REGEX_RAW}://{AUTHORITY_REGEX_RAW}(/{PATH_REGEX_RAW})?(\?{QUERY_REGEX_RAW})?(#{FRAGMENT_REGEX_RAW})?"
+    f"{SCHEME_REGEX_RAW}://{AUTHORITY_REGEX_RAW}(/{PATH_REGEX_RAW})?(\\?{QUERY_REGEX_RAW})?(#{FRAGMENT_REGEX_RAW})?"
     r")"
 )
 FULL_URL_REGEX: re.Pattern[str] = re.compile(f"^{FULL_URL_REGEX_RAW}$")
@@ -216,7 +216,7 @@ DIRTY_URL_REGEX_RAW: str = (
     f"({SCHEME_REGEX_RAW}://)?"
     f"({AUTHORITY_REGEX_RAW})?"
     f"(/?{PATH_REGEX_RAW}?)?"
-    f"(\?{QUERY_REGEX_RAW})?"
+    f"(\\?{QUERY_REGEX_RAW})?"
     f"(#{FRAGMENT_REGEX_RAW})?"
     r")"
 )
