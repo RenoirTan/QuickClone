@@ -1,5 +1,11 @@
 # QuickClone Changelog
 
+## Version 0.6.0
+
+1. Store a list of previously cloned repositories instead of the most recently
+cloned one. The repository whose path is to be printed can be chosen using the
+`--last-clones-index/-Z` flag.
+
 ## Version 0.5.0
 
 1. Detect missing configuration files and give user the option to create the
